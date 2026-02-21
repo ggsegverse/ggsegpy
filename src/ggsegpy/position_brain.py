@@ -50,13 +50,6 @@ class position_brain:
     Show only left hemisphere:
 
     >>> ggplot() + geom_brain(atlas=dk(), position=position_brain(side="left"))
-
-    Notes
-    -----
-    String shortcuts are also supported for backwards compatibility:
-    - "horizontal": equivalent to position_brain(rows=None, cols="view")
-    - "vertical": equivalent to position_brain(rows="view", cols=None)
-    - "stacked": equivalent to position_brain(rows="hemi", cols="view")
     """
 
     rows: Literal["hemi", "view"] | None = "hemi"
@@ -178,20 +171,3 @@ def _build_mask(
         mask &= gdf["hemi"] == col_val
 
     return mask
-
-
-def resolve_position(
-    position: str | position_brain,
-) -> position_brain:
-    """Convert string shortcuts to position_brain objects."""
-    if isinstance(position, position_brain):
-        return position
-
-    if position == "horizontal":
-        return position_brain(rows=None, cols="view")
-    elif position == "vertical":
-        return position_brain(rows="view", cols=None)
-    elif position == "stacked":
-        return position_brain(rows="hemi", cols="view")
-    else:
-        return position_brain()

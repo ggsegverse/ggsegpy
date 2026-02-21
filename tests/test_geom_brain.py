@@ -32,11 +32,6 @@ class TestGeomBrain:
         p = ggplot() + geom_brain(atlas=dk(), view="lateral")
         assert isinstance(p, ggplot)
 
-    def test_plot_positions(self):
-        for position in ["horizontal", "vertical", "stacked"]:
-            p = ggplot() + geom_brain(atlas=dk(), position=position)
-            assert isinstance(p, ggplot)
-
     def test_geom_brain_attributes(self):
         gb = geom_brain(atlas=dk(), hemi="left", view="lateral")
         assert gb.atlas is not None

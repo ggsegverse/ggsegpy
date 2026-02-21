@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import geopandas as gpd
 import pandas as pd
@@ -15,7 +15,7 @@ from plotnine.mapping import aes as aes_class
 
 from ggsegpy.join import brain_join
 from ggsegpy.palettes import scale_fill_brain
-from ggsegpy.position_brain import position_brain, resolve_position
+from ggsegpy.position_brain import position_brain
 from ggsegpy.themes import theme_brain
 
 if TYPE_CHECKING:
@@ -41,9 +41,9 @@ class geom_brain:
     view
         View(s) to show: 'lateral', 'medial', or list of both.
     position
-        Layout arrangement. Can be a string shortcut ('horizontal', 'vertical',
-        'stacked') or a position_brain() object for fine-grained control.
-        Default is 'stacked' (hemispheres as rows, views as columns).
+        Layout arrangement as a position_brain() object. Controls how
+        hemispheres and views are arranged in the plot grid.
+        Default is position_brain() (hemispheres as rows, views as columns).
     color
         Outline color for regions. Default is 'black'.
     size
@@ -90,8 +90,7 @@ class geom_brain:
         data: pd.DataFrame | None = None,
         hemi: str | list[str] | None = None,
         view: str | list[str] | None = None,
-        position: Literal["horizontal", "vertical", "stacked"]
-        | position_brain = "stacked",
+        position: position_brain | None = None,
         color: str = "black",
         size: float = 0.1,
         na_fill: str = "grey",
@@ -167,7 +166,7 @@ class geom_brain:
             views = [self.view] if isinstance(self.view, str) else self.view
             sf = sf[sf["view"].isin(views)]
 
-        pos = resolve_position(self.position)
+        pos = self.position if self.position is not None else position_brain()
         sf = pos.apply(sf)
 
         return sf

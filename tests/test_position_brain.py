@@ -47,22 +47,26 @@ class TestPositionBrain:
 
 
 class TestGeomBrainWithPosition:
-    def test_string_position_horizontal(self):
-        p = ggplot() + geom_brain(atlas=dk(), position="horizontal")
+    def test_default_position(self):
+        p = ggplot() + geom_brain(atlas=dk())
         assert isinstance(p, ggplot)
 
-    def test_string_position_vertical(self):
-        p = ggplot() + geom_brain(atlas=dk(), position="vertical")
-        assert isinstance(p, ggplot)
-
-    def test_string_position_stacked(self):
-        p = ggplot() + geom_brain(atlas=dk(), position="stacked")
-        assert isinstance(p, ggplot)
-
-    def test_position_brain_object(self):
-        p = ggplot() + geom_brain(atlas=dk(), position=position_brain(rows="view", cols="hemi"))
+    def test_custom_position(self):
+        pos = position_brain(rows="view", cols="hemi")
+        p = ggplot() + geom_brain(atlas=dk(), position=pos)
         assert isinstance(p, ggplot)
 
     def test_position_with_side(self):
-        p = ggplot() + geom_brain(atlas=dk(), position=position_brain(side="left"))
+        pos = position_brain(side="left")
+        p = ggplot() + geom_brain(atlas=dk(), position=pos)
+        assert isinstance(p, ggplot)
+
+    def test_single_column_layout(self):
+        pos = position_brain(rows="hemi", cols=None)
+        p = ggplot() + geom_brain(atlas=dk(), position=pos)
+        assert isinstance(p, ggplot)
+
+    def test_single_row_layout(self):
+        pos = position_brain(rows=None, cols="view")
+        p = ggplot() + geom_brain(atlas=dk(), position=pos)
         assert isinstance(p, ggplot)
