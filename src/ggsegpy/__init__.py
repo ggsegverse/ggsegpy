@@ -7,9 +7,20 @@ in 2D (using plotnine) and 3D (using plotly).
 
 from __future__ import annotations
 
-from ggsegpy.atlas import BrainAtlas, CorticalAtlas, SubcorticalAtlas, TractAtlas
+from ggsegpy.atlas import (
+    BrainAtlas,
+    CorticalAtlas,
+    SubcorticalAtlas,
+    TractAtlas,
+)
 from ggsegpy.atlases import aseg, dk, tracula
-from ggsegpy.data import AtlasData, CorticalData, SubcorticalData, SurfaceMesh, TractData
+from ggsegpy.data import (
+    AtlasData,
+    CorticalData,
+    SubcorticalData,
+    SurfaceMesh,
+    TractData,
+)
 from ggsegpy.geom_brain import geom_brain
 from ggsegpy.join import brain_join
 from ggsegpy.palettes import generate_palette, scale_fill_brain
@@ -23,7 +34,12 @@ from ggsegpy.plot3d import (
     set_legend,
 )
 from ggsegpy.position_brain import position_brain
-from ggsegpy.themes import theme_brain, theme_brain_void, theme_custombrain, theme_darkbrain
+from ggsegpy.themes import (
+    theme_brain,
+    theme_brain_void,
+    theme_custombrain,
+    theme_darkbrain,
+)
 
 __version__ = "0.1.0"
 

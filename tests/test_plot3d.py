@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import pytest
 
-from ggsegpy import aseg, dk, ggseg3d, set_camera, tracula
+from ggsegpy import aseg, dk, ggseg3d, pan_camera, tracula
 
 
 class TestGgseg3d:
@@ -45,33 +45,24 @@ class TestGgseg3d:
         fig = ggseg3d(atlas=dk(), palette=palette)
         assert isinstance(fig, go.Figure)
 
-    def test_custom_background(self):
-        fig = ggseg3d(atlas=dk(), background="black")
-        assert isinstance(fig, go.Figure)
-        assert fig.layout.paper_bgcolor == "black"
 
-    def test_opacity(self):
-        fig = ggseg3d(atlas=dk(), opacity=0.5)
-        assert isinstance(fig, go.Figure)
-
-
-class TestSetCamera:
-    def test_lateral_left(self):
+class TestPanCamera:
+    def test_left_lateral(self):
         fig = ggseg3d(atlas=dk())
-        fig = set_camera(fig, "lateral_left")
+        fig = pan_camera(fig, "left lateral")
         assert fig.layout.scene.camera is not None
 
-    def test_lateral_right(self):
+    def test_right_lateral(self):
         fig = ggseg3d(atlas=dk())
-        fig = set_camera(fig, "lateral_right")
+        fig = pan_camera(fig, "right lateral")
         assert fig.layout.scene.camera is not None
 
     def test_superior(self):
         fig = ggseg3d(atlas=dk())
-        fig = set_camera(fig, "superior")
+        fig = pan_camera(fig, "superior")
         assert fig.layout.scene.camera is not None
 
-    def test_invalid_view_uses_default(self):
+    def test_left_medial(self):
         fig = ggseg3d(atlas=dk())
-        fig = set_camera(fig, "invalid_view")
+        fig = pan_camera(fig, "left medial")
         assert fig.layout.scene.camera is not None

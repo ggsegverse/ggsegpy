@@ -1,0 +1,99 @@
+---
+format: gfm
+execute:
+  echo: true
+  warning: false
+  message: false
+knitr:
+  opts_chunk:
+    fig.path: "man/figures/README-"
+    dpi: 150
+---
+
+# ggsegpy
+
+Brain atlas visualization in Python — port of the R [ggseg](https://ggseg.github.io/ggseg/) ecosystem.
+
+[![Tests](https://github.com/ggsegverse/ggsegpy/actions/workflows/test.yml/badge.svg)](https://github.com/ggsegverse/ggsegpy/actions/workflows/test.yml)
+[![Documentation](https://github.com/ggsegverse/ggsegpy/actions/workflows/docs.yml/badge.svg)](https://ggsegverse.github.io/ggsegpy/)
+
+## Installation
+
+```bash
+pip install ggsegpy
+```
+
+## 2D Visualization
+
+```{python}
+from plotnine import ggplot, aes
+from ggsegpy import geom_brain, dk
+
+ggplot() + geom_brain(atlas=dk())
+```
+
+### With custom data
+
+```{python}
+import pandas as pd
+
+data = pd.DataFrame({
+    "region": ["precentral", "postcentral", "superiorfrontal", "inferiorparietal"],
+    "value": [0.9, 0.7, 0.5, 0.3]
+})
+
+ggplot(data) + geom_brain(atlas=dk(), mapping=aes(fill="value"))
+```
+
+### Subcortical atlas
+
+```{python}
+from ggsegpy import aseg
+
+ggplot() + geom_brain(atlas=aseg())
+```
+
+## 3D Visualization
+
+```{python}
+#| eval: false
+from ggsegpy import ggseg3d, pan_camera, add_glassbrain
+
+# Basic 3D plot
+fig = ggseg3d(atlas=dk())
+fig = pan_camera(fig, "left lateral")
+fig
+```
+
+```{python}
+#| eval: false
+# With glass brain overlay
+fig = ggseg3d(atlas=aseg())
+fig = add_glassbrain(fig, opacity=0.1)
+fig = pan_camera(fig, "left lateral")
+fig
+```
+
+## Available Atlases
+
+| Atlas | Type | Description |
+|-------|------|-------------|
+| `dk()` | Cortical | Desikan-Killiany parcellation |
+| `aseg()` | Subcortical | FreeSurfer subcortical segmentation |
+| `tracula()` | White matter | TRACULA tract atlas |
+
+## Features
+
+- 2D visualization using [plotnine](https://plotnine.org/) (ggplot2 syntax)
+- 3D interactive visualization using [Plotly](https://plotly.com/python/)
+- Easy data merging with `brain_join()`
+- Customizable themes: `theme_brain()`, `theme_darkbrain()`, `theme_custombrain()`
+- Glass brain overlays for 3D subcortical context
+
+## Documentation
+
+Full documentation at [ggsegverse.github.io/ggsegpy](https://ggsegverse.github.io/ggsegpy/)
+
+## License
+
+MIT

@@ -7,10 +7,13 @@ import geopandas as gpd
 import pandas as pd
 
 from ggsegpy.atlas import CorticalAtlas, SubcorticalAtlas, TractAtlas
-from ggsegpy.data import CorticalData, SubcorticalData, TractData, SurfaceMesh, HemiMesh
-
-if TYPE_CHECKING:
-    from ggsegpy.atlas import BrainAtlas
+from ggsegpy.data import (
+    CorticalData,
+    HemiMesh,
+    SubcorticalData,
+    SurfaceMesh,
+    TractData,
+)
 
 DATA_DIR = Path(__file__).parent / "data"
 
@@ -156,14 +159,20 @@ def _load_or_placeholder_subcortical_3d(atlas: str) -> pd.DataFrame:
                 vx = np.array(row["vertices_x"])
                 vy = np.array(row["vertices_y"])
                 vz = np.array(row["vertices_z"])
-                vertices = [[float(vx[i]), float(vy[i]), float(vz[i])] for i in range(len(vx))]
+                vertices = [
+                    [float(vx[i]), float(vy[i]), float(vz[i])]
+                    for i in range(len(vx))
+                ]
                 vertices_list.append(vertices)
 
                 fi = np.array(row["faces_i"])
                 fj = np.array(row["faces_j"])
                 fk = np.array(row["faces_k"])
                 # Convert from R's 1-indexed to Python's 0-indexed
-                faces = [[int(fi[i]) - 1, int(fj[i]) - 1, int(fk[i]) - 1] for i in range(len(fi))]
+                faces = [
+                    [int(fi[i]) - 1, int(fj[i]) - 1, int(fk[i]) - 1]
+                    for i in range(len(fi))
+                ]
                 faces_list.append(faces)
 
             df = pd.DataFrame({
