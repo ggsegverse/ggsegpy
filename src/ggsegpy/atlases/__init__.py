@@ -258,8 +258,9 @@ def _generate_placeholder_ggseg(atlas: str) -> gpd.GeoDataFrame:
         cols = 7
 
         for hemi_idx, hemi in enumerate(hemis):
+            hemi_prefix = "lh" if hemi == "left" else "rh"
             for reg_idx, (region, color) in enumerate(region_list):
-                label = f"{hemi}_{region}"
+                label = f"{hemi_prefix}_{region}"
                 col = reg_idx % cols
                 row = reg_idx // cols
 
@@ -311,8 +312,9 @@ def _generate_placeholder_vertex_indices(atlas: str) -> pd.DataFrame:
 
     rows = []
     for hemi in hemis:
+        hemi_prefix = "lh" if hemi == "left" else "rh"
         for region in regions:
-            label = f"{hemi}_{region}"
+            label = f"{hemi_prefix}_{region}"
             vertex_indices = list(np.random.randint(0, 10000, size=50))
             rows.append({"label": label, "vertex_indices": vertex_indices})
 
@@ -355,8 +357,9 @@ def _generate_placeholder_centerlines(atlas: str) -> pd.DataFrame:
     rows = []
     idx = 0
     for hemi in hemis:
+        hemi_prefix = "lh" if hemi == "left" else "rh"
         for region in regions:
-            label = f"{hemi}_{region}"
+            label = f"{hemi_prefix}_{region}"
             x_start = (idx % 4) * 30
             y_start = (idx // 4) * 30
             centerline = [

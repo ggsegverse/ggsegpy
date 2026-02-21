@@ -13,7 +13,7 @@ class TestBrainJoin:
             "label": ["lh_bankssts", "rh_bankssts"],
             "value": [0.5, 0.8],
         })
-        result = brain_join(atlas, data)
+        result = brain_join(data, atlas)
         assert "value" in result.columns
         merged_values = result[result["label"].isin(data["label"])]["value"]
         assert not merged_values.isna().all()
@@ -24,7 +24,7 @@ class TestBrainJoin:
             "region": ["bankssts", "cuneus"],
             "value": [0.5, 0.8],
         })
-        result = brain_join(atlas, data)
+        result = brain_join(data, atlas)
         assert "value" in result.columns
 
     def test_join_by_region_and_hemi(self):
@@ -34,7 +34,7 @@ class TestBrainJoin:
             "hemi": ["left", "right"],
             "value": [0.5, 0.8],
         })
-        result = brain_join(atlas, data, by=["region", "hemi"])
+        result = brain_join(data, atlas, by=["region", "hemi"])
         assert "value" in result.columns
 
     def test_unmatched_labels_warning(self):
@@ -44,7 +44,7 @@ class TestBrainJoin:
             "value": [0.5],
         })
         with pytest.warns(UserWarning, match="not in atlas"):
-            brain_join(atlas, data)
+            brain_join(data, atlas)
 
     def test_explicit_join_column(self):
         atlas = dk()
@@ -52,7 +52,7 @@ class TestBrainJoin:
             "my_label": ["lh_bankssts"],
             "value": [0.5],
         })
-        result = brain_join(atlas, data, by="my_label")
+        result = brain_join(data, atlas, by="my_label")
         assert "value" in result.columns
 
     def test_missing_join_column_raises(self):
@@ -62,4 +62,4 @@ class TestBrainJoin:
             "value": [0.5],
         })
         with pytest.raises(ValueError, match="Cannot auto-detect"):
-            brain_join(atlas, data)
+            brain_join(data, atlas)
