@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ggsegpy"
+version = "0.1.0"
+description = "Brain atlas visualization in Python - port of the R ggseg ecosystem"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Athanasia Mowinckel" }
+]
+keywords = ["brain", "atlas", "visualization", "neuroscience", "neuroimaging"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+dependencies = [
+    "pandas>=2.0",
+    "geopandas>=0.14",
+    "plotnine>=0.13",
+    "plotly>=5.18",
+    "numpy>=1.24",
+    "pyarrow>=14.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1",
+    "mypy>=1.0",
+]
+docs = [
+    "quartodoc>=0.7",
+]
+
+[project.urls]
+Homepage = "https://ggsegverse.github.io/ggsegpy/"
+Repository = "https://github.com/ggsegverse/ggsegpy"
+Documentation = "https://ggsegverse.github.io/ggsegpy/"
+Issues = "https://github.com/ggsegverse/ggsegpy/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ggsegpy"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

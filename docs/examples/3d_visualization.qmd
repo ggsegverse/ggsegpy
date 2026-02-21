@@ -1,0 +1,138 @@
+---
+title: 3D Visualization
+---
+
+The 3D plots use [Plotly](https://plotly.com/python/)—interactive out of the box. Drag to rotate, scroll to zoom.
+
+```{python}
+from ggsegpy import ggseg3d, dk
+
+ggseg3d(atlas=dk())
+```
+
+## Camera positions
+
+Use `pan_camera()` with human-readable view names:
+
+```{python}
+from ggsegpy import pan_camera
+
+fig = ggseg3d(atlas=dk())
+fig = pan_camera(fig, "left lateral")
+fig
+```
+
+Available views:
+
+- `"left lateral"`, `"right lateral"` — outside of each hemisphere
+- `"left medial"`, `"right medial"` — inside (midline)
+- `"left superior"`, `"right superior"` — top view
+- `"left inferior"`, `"right inferior"` — bottom view
+- `"left anterior"`, `"right anterior"` — front view
+- `"left posterior"`, `"right posterior"` — back view
+
+```{python}
+fig = ggseg3d(atlas=dk())
+fig = pan_camera(fig, "right medial")
+fig
+```
+
+## Backgrounds
+
+Dark backgrounds work well for presentations:
+
+```{python}
+from ggsegpy import set_background
+
+fig = ggseg3d(atlas=dk())
+fig = set_background(fig, "black")
+fig = pan_camera(fig, "left lateral")
+fig
+```
+
+## Glass brains
+
+When showing subcortical structures, a transparent cortical surface provides context:
+
+```{python}
+from ggsegpy import aseg, add_glassbrain
+
+fig = ggseg3d(atlas=aseg())
+fig = add_glassbrain(fig, opacity=0.1)
+fig = pan_camera(fig, "left lateral")
+fig
+```
+
+The glass brain shows where subcortical structures sit within the cortex:
+
+```{python}
+fig = ggseg3d(atlas=aseg())
+fig = add_glassbrain(fig, opacity=0.15)
+fig = set_background(fig, "#1a1a2e")
+fig = pan_camera(fig, "left anterior")
+fig
+```
+
+## Filtering hemispheres
+
+Show only one hemisphere:
+
+```{python}
+fig = ggseg3d(atlas=dk(), hemisphere="left")
+fig = pan_camera(fig, "left lateral")
+fig
+```
+
+## Legend control
+
+```{python}
+from ggsegpy import remove_legend, set_legend
+
+fig = ggseg3d(atlas=dk())
+fig = remove_legend(fig)
+fig = pan_camera(fig, "left lateral")
+fig
+```
+
+```{python}
+fig = ggseg3d(atlas=aseg())
+fig = set_legend(fig, show=True)
+fig
+```
+
+## White matter tracts
+
+```{python}
+from ggsegpy import tracula
+
+fig = ggseg3d(atlas=tracula())
+fig = set_background(fig, "black")
+fig = pan_camera(fig, "left lateral")
+fig
+```
+
+## Chaining functions
+
+All modifier functions return the figure:
+
+```{python}
+fig = ggseg3d(atlas=aseg())
+fig = add_glassbrain(fig, opacity=0.1)
+fig = set_background(fig, "black")
+fig = pan_camera(fig, "left anterior")
+fig
+```
+
+## Saving figures
+
+```{python}
+#| eval: false
+fig = ggseg3d(atlas=dk())
+fig = pan_camera(fig, "left lateral")
+
+# Interactive HTML
+fig.write_html("brain_interactive.html")
+
+# Static PNG (requires kaleido)
+fig.write_image("brain_static.png", width=1200, height=800)
+```

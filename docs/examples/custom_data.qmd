@@ -1,0 +1,144 @@
+---
+title: Custom Data
+---
+
+The whole point of brain visualization is showing your own data—cortical thickness, activation maps, effect sizes.
+
+## The join
+
+Your data needs a column that matches labels in the atlas:
+
+```{python}
+import pandas as pd
+from ggsegpy import dk, brain_join
+
+atlas = dk()
+
+my_data = pd.DataFrame({
+    "label": ["lh_precentral", "lh_postcentral", "rh_precentral", "rh_postcentral"],
+    "thickness": [2.5, 2.1, 2.4, 2.0]
+})
+
+merged = brain_join(my_data, atlas)
+merged[["label", "hemi", "region", "thickness"]].head()
+```
+
+The join is a left join—every atlas region appears, with `NaN` for regions not in your data.
+
+## Joining by label
+
+Labels follow the pattern `{hemisphere}_{region}`:
+
+```{python}
+from plotnine import ggplot, aes
+from ggsegpy import geom_brain
+
+effect_sizes = pd.DataFrame({
+    "label": [
+        "lh_superiorfrontal", "lh_rostralmiddlefrontal", "lh_caudalmiddlefrontal",
+        "rh_superiorfrontal", "rh_rostralmiddlefrontal", "rh_caudalmiddlefrontal"
+    ],
+    "cohens_d": [0.8, 0.6, 0.4, 0.7, 0.5, 0.3]
+})
+
+ggplot(effect_sizes) + geom_brain(atlas=dk(), mapping=aes(fill="cohens_d"))
+```
+
+## Joining by region
+
+If your data doesn't distinguish hemispheres, join by region name:
+
+```{python}
+region_data = pd.DataFrame({
+    "region": ["precentral", "postcentral", "superiorfrontal"],
+    "value": [0.9, 0.7, 0.5]
+})
+
+ggplot(region_data) + geom_brain(atlas=dk(), mapping=aes(fill="value"))
+```
+
+Both hemispheres get the same color—what you want when your analysis collapsed across hemispheres.
+
+## Color scales
+
+Since geom_brain returns a plotnine object, add any ggplot2-style scale:
+
+```{python}
+from plotnine import scale_fill_gradient2
+
+activation_data = pd.DataFrame({
+    "label": ["lh_precentral", "lh_postcentral", "lh_superiorfrontal",
+              "rh_precentral", "rh_postcentral", "rh_superiorfrontal"],
+    "t_value": [3.2, -2.1, 1.5, 2.8, -1.9, 0.8]
+})
+
+p = ggplot(activation_data) + geom_brain(atlas=dk(), mapping=aes(fill="t_value"))
+p + scale_fill_gradient2(low="blue", mid="white", high="red", midpoint=0)
+```
+
+```{python}
+from plotnine import scale_fill_viridis_c
+
+p = ggplot(effect_sizes) + geom_brain(atlas=dk(), mapping=aes(fill="cohens_d"))
+p + scale_fill_viridis_c()
+```
+
+## 3D with custom data
+
+Same pattern—use `color` parameter:
+
+```{python}
+from ggsegpy import ggseg3d, pan_camera
+
+fig = ggseg3d(data=effect_sizes, atlas=dk(), color="cohens_d")
+fig = pan_camera(fig, "left lateral")
+fig
+```
+
+## Subcortical data
+
+Check available labels:
+
+```{python}
+from ggsegpy import aseg
+
+aseg_atlas = aseg()
+print(aseg_atlas.labels[:10])
+```
+
+```{python}
+volumes = pd.DataFrame({
+    "label": ["Left-Hippocampus", "Right-Hippocampus", "Left-Amygdala", "Right-Amygdala"],
+    "volume_mm3": [3500, 3400, 1200, 1150]
+})
+
+ggplot(volumes) + geom_brain(atlas=aseg(), mapping=aes(fill="volume_mm3"))
+```
+
+## Troubleshooting
+
+If your plot looks wrong, check the join:
+
+```{python}
+#| warning: true
+bad_data = pd.DataFrame({
+    "label": ["precentral", "postcentral"],  # Missing hemisphere prefix
+    "value": [1.0, 2.0]
+})
+
+merged = brain_join(bad_data, dk())
+```
+
+The warning tells you which labels didn't match.
+
+## Quick reference
+
+Every atlas has a `.labels` property:
+
+```{python}
+from ggsegpy import dk, aseg, tracula
+
+print("DK labels (first 5):", dk().labels[:5])
+print("ASEG labels (first 5):", aseg().labels[:5])
+print("TRACULA labels (first 5):", tracula().labels[:5])
+```

@@ -1,0 +1,104 @@
+---
+title: Getting Started
+---
+
+## Installation
+
+```bash
+pip install ggsegpy
+```
+
+Or install from source:
+
+```bash
+pip install git+https://github.com/ggsegverse/ggsegpy.git
+```
+
+### Dependencies
+
+ggsegpy requires:
+
+- Python 3.10+
+- pandas, geopandas
+- plotnine (for 2D)
+- plotly (for 3D)
+
+These install automatically with pip.
+
+## First plot
+
+```{python}
+from plotnine import ggplot
+from ggsegpy import geom_brain, dk
+
+ggplot() + geom_brain(atlas=dk())
+```
+
+That's the Desikan-Killiany atlas—34 cortical regions per hemisphere. Each color is a brain region. Grey areas are the medial wall, shown for context.
+
+## Available atlases
+
+Three atlases ship with ggsegpy:
+
+```{python}
+from ggsegpy import dk, aseg, tracula
+
+# Cortical parcellation
+print(f"dk: {len(dk().labels)} labels")
+
+# Subcortical segmentation
+print(f"aseg: {len(aseg().labels)} labels")
+
+# White matter tracts
+print(f"tracula: {len(tracula().labels)} labels")
+```
+
+### Cortical (dk)
+
+```{python}
+ggplot() + geom_brain(atlas=dk())
+```
+
+### Subcortical (aseg)
+
+```{python}
+ggplot() + geom_brain(atlas=aseg())
+```
+
+### White matter (tracula)
+
+```{python}
+ggplot() + geom_brain(atlas=tracula())
+```
+
+## 2D vs 3D
+
+Every atlas works in both 2D and 3D. Use `ggseg3d()` for interactive 3D:
+
+```{python}
+from ggsegpy import ggseg3d
+
+ggseg3d(atlas=dk())
+```
+
+## Adding your data
+
+The real point is visualizing your own data. Pass a DataFrame with labels matching the atlas:
+
+```{python}
+from plotnine import ggplot, aes
+import pandas as pd
+
+my_data = pd.DataFrame({
+    "label": ["lh_precentral", "lh_postcentral", "rh_precentral", "rh_postcentral"],
+    "value": [2.5, 2.1, 2.4, 2.0]
+})
+
+ggplot(my_data) + geom_brain(atlas=dk(), mapping=aes(fill="value"))
+```
+
+## Next steps
+
+- [2D Visualization](examples/2d_visualization.qmd) — hemispheres, views, themes
+- [3D Visualization](examples/3d_visualization.qmd) — camera positions, glass brains
+- [Custom Data](examples/custom_data.qmd) — joining strategies, color scales

@@ -1,0 +1,56 @@
+# ggsegpy brand - synced from ggsegverse.github.io
+# Source: https://raw.githubusercontent.com/ggsegverse/ggsegverse.github.io/main/_brand.yml
+
+meta:
+  name: ggsegpy
+  link: https://ggsegverse.github.io
+
+color:
+  palette:
+    teal-dark: "#29393e"
+    teal-light: "#a8c5cb"
+    mauve: "#cec4cc"
+    plum: "#5e3c58"
+    slate-900: "#1a2a2e"
+    white: "#f2f0ef"
+    success: "#478f76"
+    danger: "#CD6689"
+    warning: "#e5a663"
+  primary:
+    light: teal-dark
+    dark: teal-light
+  secondary:
+    light: plum
+    dark: mauve
+  tertiary:
+    light: teal-light
+    dark: teal-dark
+  foreground:
+    light: slate-900
+    dark: white
+  background:
+    light: white
+    dark: slate-900
+  success: success
+  danger: danger
+  warning: warning
+
+typography:
+  fonts:
+    - family: Montserrat
+      source: google
+    - family: Inter
+      source: google
+    - family: Fira Code
+      source: google
+  base: Inter
+  headings: Montserrat
+  link:
+    color:
+      light: teal-dark
+      dark: teal-light
+  monospace: Fira Code
+  monospace-block:
+    background-color:
+      light: mauve
+      dark: teal-dark

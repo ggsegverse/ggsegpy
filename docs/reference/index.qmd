@@ -1,0 +1,61 @@
+---
+title: API Reference
+---
+
+Complete function and class documentation for ggsegpy.
+
+## Visualization Functions
+
+Core plotting functions for 2D and 3D brain visualization.
+
+| Function | Description |
+|----------|-------------|
+| [geom_brain](geom_brain.qmd) | 2D brain atlas layer for plotnine |
+| [ggseg3d](ggseg3d.qmd) | 3D interactive brain visualization |
+
+## Atlases
+
+Built-in brain atlases that ship with ggsegpy.
+
+| Function | Type | Description |
+|----------|------|-------------|
+| [dk](dk.qmd) | Cortical | Desikan-Killiany parcellation |
+| [aseg](aseg.qmd) | Subcortical | FreeSurfer subcortical segmentation |
+| [tracula](tracula.qmd) | Tracts | TRACULA white matter atlas |
+
+## 3D Modifiers
+
+Functions to modify 3D plots. All return the figure for chaining.
+
+| Function | Description |
+|----------|-------------|
+| [pan_camera](pan_camera.qmd) | Set camera position (R-style names) |
+| [set_background](set_background.qmd) | Change background color |
+| [add_glassbrain](add_glassbrain.qmd) | Add transparent brain context |
+| [set_legend](set_legend.qmd) | Configure legend display |
+
+## Data Handling
+
+| Function | Description |
+|----------|-------------|
+| [brain_join](brain_join.qmd) | Join user data with atlas geometry |
+
+## Themes
+
+Plotnine themes for brain plots.
+
+| Function | Description |
+|----------|-------------|
+| `theme_brain` | Clean theme with minimal axes |
+| `theme_darkbrain` | Dark background theme |
+| `theme_custombrain` | Customizable theme |
+| `theme_brain_void` | No axes, background, or grid |
+
+## Classes
+
+| Class | Description |
+|-------|-------------|
+| [BrainAtlas](BrainAtlas.qmd) | Base class for all atlases |
+| `CorticalAtlas` | Cortical surface atlas |
+| `SubcorticalAtlas` | Subcortical structure atlas |
+| `TractAtlas` | White matter tract atlas |

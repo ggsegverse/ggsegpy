@@ -1,0 +1,95 @@
+---
+title: ggsegpy
+subtitle: Brain atlas visualization in Python
+---
+
+```{python}
+#| echo: false
+#| output: false
+import warnings
+warnings.filterwarnings('ignore')
+```
+
+Three lines to visualize a brain atlas:
+```{python}
+from plotnine import ggplot
+from ggsegpy import geom_brain, dk
+
+ggplot() + geom_brain(atlas=dk())
+```
+
+ggsegpy is a Python port of the R [ggseg ecosystem](https://ggseg.github.io/ggseg/). It provides 2D visualization with [plotnine](https://plotnine.org/) and 3D interactive visualization with [Plotly](https://plotly.com/python/).
+
+## Installation
+
+```bash
+pip install ggsegpy
+```
+
+## What's included
+
+Three atlases ship with the package:
+
+| Atlas | Type | Regions |
+|-------|------|---------|
+| `dk()` | Cortical | Desikan-Killiany parcellation (34 × 2 hemispheres) |
+| `aseg()` | Subcortical | FreeSurfer subcortical segmentation |
+| `tracula()` | White matter | TRACULA tract atlas |
+
+Each works in both 2D and 3D:
+
+::: {.panel-tabset}
+
+### 2D
+
+```{python}
+from ggsegpy import aseg
+
+ggplot() + geom_brain(atlas=aseg())
+```
+
+### 3D
+
+```{python}
+from ggsegpy import ggseg3d, aseg, pan_camera, add_glassbrain
+
+fig = ggseg3d(atlas=aseg())
+fig = add_glassbrain(fig, opacity=0.1)
+fig = pan_camera(fig, "left lateral")
+fig
+```
+
+:::
+
+## Adding your data
+
+Pass a DataFrame with a `label` column matching atlas regions:
+
+```{python}
+from plotnine import ggplot, aes
+import pandas as pd
+from ggsegpy import geom_brain, dk
+
+my_data = pd.DataFrame({
+    "label": ["lh_precentral", "lh_postcentral", "rh_precentral", "rh_postcentral"],
+    "thickness": [2.5, 2.1, 2.4, 2.0]
+})
+
+ggplot(my_data) + geom_brain(atlas=dk(), mapping=aes(fill="thickness"))
+```
+
+## Learn more
+
+- [Get Started](getting-started.qmd) — installation and first steps
+- [2D Visualization](examples/2d_visualization.qmd) — hemispheres, views, themes
+- [3D Visualization](examples/3d_visualization.qmd) — camera, glass brains, backgrounds
+- [Custom Data](examples/custom_data.qmd) — joins, color scales, troubleshooting
+- [API Reference](reference/index.qmd) — function documentation
+
+## Part of the ggseg ecosystem
+
+ggsegpy is part of a larger ecosystem for brain visualization:
+
+- [ggseg](https://ggseg.github.io/ggseg/) — the original R package
+- [ggseg3d](https://ggseg.github.io/ggseg3d/) — 3D visualization in R
+- [ggsegExtra](https://ggseg.github.io/ggsegExtra/) — additional atlases

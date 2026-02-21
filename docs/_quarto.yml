@@ -1,0 +1,113 @@
+project:
+  type: website
+  output-dir: _site
+  pre-render: python _scripts/sync-brand.py
+
+website:
+  title: ggsegpy
+  description: Brain atlas visualization in Python
+  repo-url: https://github.com/ggsegverse/ggsegpy
+  repo-actions: [edit, issue]
+
+  navbar:
+    background: primary
+    left:
+      - text: Get Started
+        href: getting-started.qmd
+      - text: Examples
+        menu:
+          - text: 2D Visualization
+            href: examples/2d_visualization.qmd
+          - text: 3D Visualization
+            href: examples/3d_visualization.qmd
+          - text: Custom Data
+            href: examples/custom_data.qmd
+      - text: Reference
+        href: reference/index.qmd
+    right:
+      - icon: github
+        href: https://github.com/ggsegverse/ggsegpy
+
+  sidebar:
+    - id: reference
+      title: Reference
+      style: docked
+      contents:
+        - reference/index.qmd
+        - section: Visualization
+          contents:
+            - reference/geom_brain.qmd
+            - reference/ggseg3d.qmd
+        - section: Atlases
+          contents:
+            - reference/dk.qmd
+            - reference/aseg.qmd
+            - reference/tracula.qmd
+        - section: 3D Modifiers
+          contents:
+            - reference/pan_camera.qmd
+            - reference/set_background.qmd
+            - reference/add_glassbrain.qmd
+            - reference/set_legend.qmd
+        - section: Data
+          contents:
+            - reference/brain_join.qmd
+            - reference/BrainAtlas.qmd
+
+  page-footer:
+    center: |
+      ggsegpy is part of the [ggseg ecosystem](https://ggseg.github.io/)
+
+format:
+  html:
+    theme: brand
+    toc: true
+    code-copy: true
+    code-overflow: wrap
+
+quartodoc:
+  package: ggsegpy
+  dir: reference
+  title: API Reference
+  sidebar: reference
+  renderer:
+    style: markdown
+  sections:
+    - title: Visualization Functions
+      desc: Core plotting functions for 2D and 3D brain visualization
+      contents:
+        - geom_brain
+        - ggseg3d
+    - title: Atlases
+      desc: Built-in brain atlases
+      contents:
+        - dk
+        - aseg
+        - tracula
+    - title: 3D Modifiers
+      desc: Functions to modify 3D plots (pipe-style)
+      contents:
+        - pan_camera
+        - set_background
+        - add_glassbrain
+        - set_legend
+        - remove_legend
+        - set_hover
+    - title: Data Handling
+      desc: Functions for joining data with atlases
+      contents:
+        - brain_join
+    - title: Themes
+      desc: Plotnine themes for brain plots
+      contents:
+        - theme_brain
+        - theme_darkbrain
+        - theme_custombrain
+        - theme_brain_void
+    - title: Classes
+      desc: Core data structures
+      contents:
+        - BrainAtlas
+        - CorticalAtlas
+        - SubcorticalAtlas
+        - TractAtlas

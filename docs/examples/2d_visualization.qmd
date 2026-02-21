@@ -1,0 +1,96 @@
+---
+title: 2D Visualization
+---
+
+The 2D plots use [plotnine](https://plotnine.org/), Python's implementation of ggplot2. If you know ggplot2 from R, you're already home. If you don't, the grammar-of-graphics approach means plots build up from layers—data, aesthetics, geometries, scales, themes.
+
+```{python}
+from plotnine import ggplot
+from ggsegpy import geom_brain, dk
+
+ggplot() + geom_brain(atlas=dk())
+```
+
+## Filtering by hemisphere
+
+Often you only need one hemisphere:
+
+```{python}
+ggplot() + geom_brain(atlas=dk(), hemi="left")
+```
+
+```{python}
+ggplot() + geom_brain(atlas=dk(), hemi="right")
+```
+
+## Filtering by view
+
+Each hemisphere has lateral (outside) and medial (inside) views:
+
+```{python}
+ggplot() + geom_brain(atlas=dk(), hemi="left", view="lateral")
+```
+
+```{python}
+ggplot() + geom_brain(atlas=dk(), hemi="left", view="medial")
+```
+
+## Themes
+
+ggsegpy ships with themes designed for brain plots:
+
+```{python}
+from ggsegpy import theme_brain, theme_brain_void, theme_darkbrain
+
+p = ggplot() + geom_brain(atlas=dk(), hemi="left")
+p + theme_brain()
+```
+
+```{python}
+p + theme_brain_void()
+```
+
+```{python}
+p + theme_darkbrain()
+```
+
+## Working with plotnine
+
+Since `geom_brain()` works with plotnine, you can add any plotnine layer:
+
+```{python}
+from plotnine import labs, theme, element_text
+
+p = ggplot() + geom_brain(atlas=dk(), hemi="left")
+p + labs(title="Desikan-Killiany Atlas", subtitle="Left hemisphere")
+```
+
+## Subcortical atlas
+
+The aseg atlas shows subcortical structures in axial slices. The grey outline is the cortex, providing spatial context:
+
+```{python}
+from ggsegpy import aseg
+
+ggplot() + geom_brain(atlas=aseg())
+```
+
+## Tract atlas
+
+White matter tracts from TRACULA:
+
+```{python}
+from ggsegpy import tracula
+
+ggplot() + geom_brain(atlas=tracula())
+```
+
+## Saving plots
+
+```{python}
+#| eval: false
+p = ggplot() + geom_brain(atlas=dk())
+p.save("dk_atlas.png", width=10, height=4, dpi=300)
+```
+
+For publication figures, 300 DPI and explicit dimensions give you control over the final output.
