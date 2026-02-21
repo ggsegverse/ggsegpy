@@ -71,16 +71,20 @@ def _load_fsaverage5() -> SurfaceMesh | None:
         df = pd.read_parquet(path)
 
         def make_hemi_mesh(row):
-            verts = pd.DataFrame({
-                "x": np.array(row["vertices_x"]),
-                "y": np.array(row["vertices_y"]),
-                "z": np.array(row["vertices_z"]),
-            })
-            faces = pd.DataFrame({
-                "i": np.array(row["faces_i"]),
-                "j": np.array(row["faces_j"]),
-                "k": np.array(row["faces_k"]),
-            })
+            verts = pd.DataFrame(
+                {
+                    "x": np.array(row["vertices_x"]),
+                    "y": np.array(row["vertices_y"]),
+                    "z": np.array(row["vertices_z"]),
+                }
+            )
+            faces = pd.DataFrame(
+                {
+                    "i": np.array(row["faces_i"]),
+                    "j": np.array(row["faces_j"]),
+                    "k": np.array(row["faces_k"]),
+                }
+            )
             return HemiMesh(vertices=verts, faces=faces)
 
         lh_row = df[df["hemi"] == "lh"].iloc[0]
@@ -99,6 +103,7 @@ def _load_or_placeholder_ggseg(atlas: str) -> gpd.GeoDataFrame:
         df = pd.read_parquet(path)
         if "geometry_wkt" in df.columns:
             from shapely import wkt
+
             df["geometry"] = df["geometry_wkt"].apply(wkt.loads)
             df = df.drop(columns=["geometry_wkt"])
 
@@ -159,8 +164,7 @@ def _load_or_placeholder_subcortical_3d(atlas: str) -> pd.DataFrame:
                 vy = np.array(row["vertices_y"])
                 vz = np.array(row["vertices_z"])
                 vertices = [
-                    [float(vx[i]), float(vy[i]), float(vz[i])]
-                    for i in range(len(vx))
+                    [float(vx[i]), float(vy[i]), float(vz[i])] for i in range(len(vx))
                 ]
                 vertices_list.append(vertices)
 
@@ -174,11 +178,13 @@ def _load_or_placeholder_subcortical_3d(atlas: str) -> pd.DataFrame:
                 ]
                 faces_list.append(faces)
 
-            df = pd.DataFrame({
-                "label": df["label"],
-                "vertices": vertices_list,
-                "faces": faces_list,
-            })
+            df = pd.DataFrame(
+                {
+                    "label": df["label"],
+                    "vertices": vertices_list,
+                    "faces": faces_list,
+                }
+            )
         return df
     return _generate_placeholder_meshes(atlas)
 
@@ -230,6 +236,7 @@ def _extract_core(ggseg: gpd.GeoDataFrame) -> pd.DataFrame:
 def _get_placeholder_palette(ggseg: gpd.GeoDataFrame) -> dict[str, str]:
     labels = ggseg["label"].unique()
     import numpy as np
+
     hues = np.linspace(0, 360, len(labels), endpoint=False)
     return {label: f"hsl({int(h)}, 70%, 50%)" for label, h in zip(labels, hues)}
 
@@ -267,14 +274,16 @@ def _generate_placeholder_ggseg(atlas: str) -> gpd.GeoDataFrame:
                     y = row * 15 + hemi_idx * 80
 
                     geom = box(x, y, x + 12, y + 12)
-                    rows.append({
-                        "label": label,
-                        "hemi": hemi,
-                        "region": region,
-                        "view": view,
-                        "color": color,
-                        "geometry": geom,
-                    })
+                    rows.append(
+                        {
+                            "label": label,
+                            "hemi": hemi,
+                            "region": region,
+                            "view": view,
+                            "color": color,
+                            "geometry": geom,
+                        }
+                    )
     else:
         region_list = list(regions.items())
         cols = 5
@@ -287,14 +296,16 @@ def _generate_placeholder_ggseg(atlas: str) -> gpd.GeoDataFrame:
                 y = row * 15
 
                 geom = box(x, y, x + 12, y + 12)
-                rows.append({
-                    "label": label,
-                    "hemi": hemi,
-                    "region": region,
-                    "view": view,
-                    "color": color,
-                    "geometry": geom,
-                })
+                rows.append(
+                    {
+                        "label": label,
+                        "hemi": hemi,
+                        "region": region,
+                        "view": view,
+                        "color": color,
+                        "geometry": geom,
+                    }
+                )
 
     return gpd.GeoDataFrame(rows, crs="EPSG:4326")
 

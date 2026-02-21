@@ -113,6 +113,7 @@ class geom_brain:
     def _build_plot(self, gg):
         if self.atlas is None:
             from ggsegpy.atlases import dk
+
             atlas = dk()
         else:
             atlas = self.atlas
@@ -148,7 +149,7 @@ class geom_brain:
         sf = atlas.data.ggseg.copy()
 
         user_data = self.data
-        if user_data is None and hasattr(gg, 'data') and gg.data is not None:
+        if user_data is None and hasattr(gg, "data") and gg.data is not None:
             user_data = gg.data
 
         if user_data is not None:
