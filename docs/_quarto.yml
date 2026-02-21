@@ -69,7 +69,6 @@ quartodoc:
   package: ggsegpy
   dir: reference
   title: API Reference
-  sidebar: reference
   renderer:
     style: markdown
   sections:
