@@ -1,64 +1,99 @@
+# With custom data
+
+
 # ggsegpy
 
-Brain atlas visualization in Python — port of the R [ggseg](https://ggseg.github.io/ggseg/) ecosystem.
+Brain atlas visualization in Python — port of the R
+[ggseg](https://ggseg.github.io/ggseg/) ecosystem.
 
 [![Tests](https://github.com/ggsegverse/ggsegpy/actions/workflows/test.yml/badge.svg)](https://github.com/ggsegverse/ggsegpy/actions/workflows/test.yml)
 [![Documentation](https://github.com/ggsegverse/ggsegpy/actions/workflows/docs.yml/badge.svg)](https://ggsegverse.github.io/ggsegpy/)
 
 ## Installation
 
-```bash
+``` bash
 pip install ggsegpy
 ```
 
-## Quick Start
+## 2D Visualization
 
-```python
+``` python
 from plotnine import ggplot, aes
 from ggsegpy import geom_brain, dk
 
-# Basic 2D plot
 ggplot() + geom_brain(atlas=dk())
+```
 
-# With data
+<img src="README_files/figure-commonmark/cell-2-output-1.png"
+width="525" height="375" />
+
+``` python
 import pandas as pd
 
 data = pd.DataFrame({
-    "region": ["precentral", "postcentral", "superiorfrontal"],
-    "value": [0.5, 0.8, 0.3]
+    "region": ["precentral", "postcentral", "superiorfrontal", "inferiorparietal"],
+    "value": [0.9, 0.7, 0.5, 0.3]
 })
+
 ggplot(data) + geom_brain(atlas=dk(), mapping=aes(fill="value"))
 ```
 
-### 3D Visualization
+<img src="README_files/figure-commonmark/cell-3-output-1.png"
+width="525" height="375" />
 
-```python
+### Subcortical atlas
+
+``` python
+from ggsegpy import aseg
+
+ggplot() + geom_brain(atlas=aseg())
+```
+
+<img src="README_files/figure-commonmark/cell-4-output-1.png"
+width="525" height="375" />
+
+## 3D Visualization
+
+``` python
 from ggsegpy import ggseg3d, pan_camera, add_glassbrain
 
+# Basic 3D plot
 fig = ggseg3d(atlas=dk())
+fig = pan_camera(fig, "left lateral")
+fig
+```
+
+``` python
+# With glass brain overlay
+fig = ggseg3d(atlas=aseg())
+fig = add_glassbrain(fig, opacity=0.1)
 fig = pan_camera(fig, "left lateral")
 fig
 ```
 
 ## Available Atlases
 
-| Atlas | Type | Description |
-|-------|------|-------------|
-| `dk()` | Cortical | Desikan-Killiany parcellation |
-| `aseg()` | Subcortical | FreeSurfer subcortical segmentation |
-| `tracula()` | White matter | TRACULA tract atlas |
+| Atlas       | Type         | Description                         |
+|-------------|--------------|-------------------------------------|
+| `dk()`      | Cortical     | Desikan-Killiany parcellation       |
+| `aseg()`    | Subcortical  | FreeSurfer subcortical segmentation |
+| `tracula()` | White matter | TRACULA tract atlas                 |
 
 ## Features
 
-- 2D visualization using [plotnine](https://plotnine.org/) (ggplot2 syntax)
-- 3D interactive visualization using [Plotly](https://plotly.com/python/)
+- 2D visualization using [plotnine](https://plotnine.org/) (ggplot2
+  syntax)
+- 3D interactive visualization using
+  [Plotly](https://plotly.com/python/)
 - Easy data merging with `brain_join()`
-- Customizable themes: `theme_brain()`, `theme_darkbrain()`, `theme_custombrain()`
+- Customizable themes: `theme_brain()`, `theme_darkbrain()`,
+  `theme_custombrain()`
 - Glass brain overlays for 3D subcortical context
 
 ## Documentation
 
-Full documentation at [ggsegverse.github.io/ggsegpy](https://ggsegverse.github.io/ggsegpy/)
+Full documentation at
+[ggsegverse.github.io/ggsegpy](https://ggsegverse.github.io/ggsegpy/)
 
 ## License
 
