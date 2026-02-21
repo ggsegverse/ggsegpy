@@ -77,10 +77,10 @@ p + scale_fill_gradient2(low="blue", mid="white", high="red", midpoint=0)
 ```
 
 ```{python}
-from plotnine import scale_fill_viridis_c
+from plotnine import scale_fill_cmap
 
 p = ggplot(effect_sizes) + geom_brain(atlas=dk(), mapping=aes(fill="cohens_d"))
-p + scale_fill_viridis_c()
+p + scale_fill_cmap(cmap_name="viridis")
 ```
 
 ## 3D with custom data
