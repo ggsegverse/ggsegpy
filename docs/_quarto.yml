@@ -1,7 +1,6 @@
 project:
   type: website
   output-dir: _site
-  pre-render: python _scripts/sync-brand.py
 
 website:
   title: ggsegpy
