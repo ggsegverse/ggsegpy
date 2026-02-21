@@ -35,7 +35,7 @@ jobs:
         uses: quarto-dev/quarto-actions/setup@v2
 
       - name: Install quartodoc
-        run: pip install quartodoc
+        run: pip install "quartodoc>=0.9" "griffe>=1.0,<2.0"
 
       - name: Build API docs
         run: |

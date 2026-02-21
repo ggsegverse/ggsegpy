@@ -1,13 +1,10 @@
 ---
 format: gfm
+jupyter: python3
 execute:
   echo: true
   warning: false
-  message: false
-knitr:
-  opts_chunk:
-    fig.path: "man/figures/README-"
-    dpi: 150
+fig-dpi: 150
 ---
 
 # ggsegpy
