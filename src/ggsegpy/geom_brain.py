@@ -4,7 +4,13 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import geopandas as gpd
 import pandas as pd
-from plotnine import aes, coord_fixed, geom_polygon, scale_fill_identity, scale_fill_manual
+from plotnine import (
+    aes,
+    coord_fixed,
+    geom_polygon,
+    scale_fill_identity,
+    scale_fill_manual,
+)
 from plotnine.mapping import aes as aes_class
 
 from ggsegpy.join import brain_join
@@ -105,8 +111,6 @@ class geom_brain:
         return self._build_plot(gg)
 
     def _build_plot(self, gg):
-        from plotnine import ggplot
-
         if self.atlas is None:
             from ggsegpy.atlases import dk
             atlas = dk()
@@ -134,7 +138,9 @@ class geom_brain:
             result = result + scale_fill_identity()
         elif atlas.palette:
             fill_palette = scale_fill_brain(atlas.palette, self.na_fill)
-            result = result + scale_fill_manual(values=fill_palette, na_value=self.na_fill)
+            result = result + scale_fill_manual(
+                values=fill_palette, na_value=self.na_fill
+            )
 
         return result
 

@@ -176,7 +176,6 @@ def _add_cortical_surfaces(
     hemis_to_render = core["hemi"].unique()
 
     for hemi in hemis_to_render:
-        hemi_short = "lh" if hemi == "left" else "rh"
         hemi_mesh = mesh.lh if hemi == "left" else mesh.rh
 
         vertices = hemi_mesh.vertices.copy()
