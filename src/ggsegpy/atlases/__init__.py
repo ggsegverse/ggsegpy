@@ -108,28 +108,22 @@ def _load_or_placeholder_ggseg(atlas: str) -> gpd.GeoDataFrame:
             df = df.drop(columns=["geometry_wkt"])
 
         # Fill missing hemi values from label prefix for context regions
-        def infer_hemi(row):
-            if pd.notna(row["hemi"]):
-                return row["hemi"]
-            label = row["label"]
-            if label.startswith("lh_"):
-                return "left"
-            elif label.startswith("rh_"):
-                return "right"
-            return "midline"
-
-        df["hemi"] = df.apply(infer_hemi, axis=1)
+        hemi_missing = df["hemi"].isna()
+        if hemi_missing.any():
+            labels = df.loc[hemi_missing, "label"]
+            inferred_hemi = pd.Series("midline", index=labels.index)
+            inferred_hemi[labels.str.startswith("lh_")] = "left"
+            inferred_hemi[labels.str.startswith("rh_")] = "right"
+            df.loc[hemi_missing, "hemi"] = inferred_hemi
 
         # Fill missing region from label
-        def infer_region(row):
-            if pd.notna(row["region"]):
-                return row["region"]
-            label = row["label"]
-            if label.startswith(("lh_", "rh_")):
-                return label[3:]
-            return label
-
-        df["region"] = df.apply(infer_region, axis=1)
+        region_missing = df["region"].isna()
+        if region_missing.any():
+            labels = df.loc[region_missing, "label"]
+            has_prefix = labels.str.startswith(("lh_", "rh_"))
+            inferred_region = labels.copy()
+            inferred_region[has_prefix] = labels[has_prefix].str[3:]
+            df.loc[region_missing, "region"] = inferred_region
 
         # Fill missing colors with grey for context regions
         if "color" in df.columns:
@@ -157,32 +151,24 @@ def _load_or_placeholder_subcortical_3d(atlas: str) -> pd.DataFrame:
         df = pd.read_parquet(path)
 
         if "vertices_x" in df.columns:
-            vertices_list = []
-            faces_list = []
-            for _, row in df.iterrows():
-                vx = np.array(row["vertices_x"])
-                vy = np.array(row["vertices_y"])
-                vz = np.array(row["vertices_z"])
-                vertices = [
-                    [float(vx[i]), float(vy[i]), float(vz[i])] for i in range(len(vx))
-                ]
-                vertices_list.append(vertices)
 
-                fi = np.array(row["faces_i"])
-                fj = np.array(row["faces_j"])
-                fk = np.array(row["faces_k"])
-                # Convert from R's 1-indexed to Python's 0-indexed
-                faces = [
-                    [int(fi[i]) - 1, int(fj[i]) - 1, int(fk[i]) - 1]
-                    for i in range(len(fi))
-                ]
-                faces_list.append(faces)
+            def build_vertices(row):
+                vx = np.asarray(row["vertices_x"])
+                vy = np.asarray(row["vertices_y"])
+                vz = np.asarray(row["vertices_z"])
+                return np.column_stack([vx, vy, vz]).tolist()
+
+            def build_faces(row):
+                fi = np.asarray(row["faces_i"]) - 1  # R 1-indexed to Python 0-indexed
+                fj = np.asarray(row["faces_j"]) - 1
+                fk = np.asarray(row["faces_k"]) - 1
+                return np.column_stack([fi, fj, fk]).astype(int).tolist()
 
             df = pd.DataFrame(
                 {
                     "label": df["label"],
-                    "vertices": vertices_list,
-                    "faces": faces_list,
+                    "vertices": [build_vertices(row) for _, row in df.iterrows()],
+                    "faces": [build_faces(row) for _, row in df.iterrows()],
                 }
             )
         return df
@@ -201,14 +187,17 @@ def _load_or_placeholder_tract_3d(atlas: str) -> pd.DataFrame:
         def reshape_centerline(arr):
             if arr is None or len(arr) == 0:
                 return []
-            arr = np.array(arr)
+            arr = np.asarray(arr)
             n_points = len(arr) // 3
             if n_points == 0:
                 return []
-            x = arr[:n_points]
-            y = arr[n_points : 2 * n_points]
-            z = arr[2 * n_points : 3 * n_points]
-            return [[float(x[i]), float(y[i]), float(z[i])] for i in range(n_points)]
+            return np.column_stack(
+                [
+                    arr[:n_points],
+                    arr[n_points : 2 * n_points],
+                    arr[2 * n_points : 3 * n_points],
+                ]
+            ).tolist()
 
         df["centerline"] = df["centerline"].apply(reshape_centerline)
         return df
@@ -217,14 +206,8 @@ def _load_or_placeholder_tract_3d(atlas: str) -> pd.DataFrame:
 
 def _extract_palette(ggseg: gpd.GeoDataFrame) -> dict[str, str]:
     if "color" in ggseg.columns:
-        palette = {}
-        for label, color in zip(ggseg["label"], ggseg["color"]):
-            if pd.isna(color):
-                # Default grey for context regions (medial wall, unknown)
-                palette[label] = "#A9A9A9"
-            else:
-                palette[label] = color
-        return palette
+        colors = ggseg["color"].fillna("#A9A9A9")
+        return dict(zip(ggseg["label"], colors))
     return _get_placeholder_palette(ggseg)
 
 

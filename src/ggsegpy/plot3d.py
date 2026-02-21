@@ -182,17 +182,16 @@ def _add_cortical_surfaces(
         faces = hemi_mesh.faces
 
         n_vertices = len(vertices)
-        vertex_colors = [na_color] * n_vertices
+        vertex_colors = np.array([na_color] * n_vertices, dtype=object)
 
         hemi_core = core[core["hemi"] == hemi]
-        for _, region_row in hemi_core.iterrows():
-            label = region_row["label"]
+        ggseg3d_indexed = ggseg3d_df.set_index("label")
 
-            region_data = ggseg3d_df[ggseg3d_df["label"] == label]
-            if region_data.empty:
+        for label in hemi_core["label"]:
+            if label not in ggseg3d_indexed.index:
                 continue
 
-            vertex_indices = region_data.iloc[0]["vertex_indices"]
+            vertex_indices = ggseg3d_indexed.loc[label, "vertex_indices"]
             if vertex_indices is None or len(vertex_indices) == 0:
                 continue
 
@@ -204,9 +203,11 @@ def _add_cortical_surfaces(
                 na_color=na_color,
             )
 
-            for idx in vertex_indices:
-                if 0 <= idx < n_vertices:
-                    vertex_colors[idx] = region_color
+            indices = np.asarray(vertex_indices)
+            valid_mask = (indices >= 0) & (indices < n_vertices)
+            vertex_colors[indices[valid_mask]] = region_color
+
+        vertex_colors = vertex_colors.tolist()
 
         # Position hemisphere so left and right don't overlap
         x_positioned = _position_hemisphere(vertices["x"].tolist(), hemi)
@@ -263,16 +264,14 @@ def _add_subcortical_meshes(
             na_color=na_color,
         )
 
-        x = [v[0] for v in vertices]
-        y = [v[1] for v in vertices]
-        z = [v[2] for v in vertices]
-        i = [f[0] for f in faces]
-        j = [f[1] for f in faces]
-        k = [f[2] for f in faces]
+        verts_arr = np.asarray(vertices)
+        faces_arr = np.asarray(faces)
+        x, y, z = verts_arr[:, 0], verts_arr[:, 1], verts_arr[:, 2]
+        i, j, k = faces_arr[:, 0], faces_arr[:, 1], faces_arr[:, 2]
 
         # Position based on hemisphere
         hemi = region_row.get("hemi", "midline")
-        x = _position_hemisphere(x, hemi)
+        x = _position_hemisphere(x.tolist(), hemi)
 
         hover_label = region_row.get(label_by, label)
         hover_text = str(hover_label)
@@ -282,11 +281,11 @@ def _add_subcortical_meshes(
         fig.add_trace(
             go.Mesh3d(
                 x=x,
-                y=y,
-                z=z,
-                i=i,
-                j=j,
-                k=k,
+                y=y.tolist(),
+                z=z.tolist(),
+                i=i.tolist(),
+                j=j.tolist(),
+                k=k.tolist(),
                 color=region_color,
                 opacity=1.0,
                 name=label,
@@ -330,13 +329,13 @@ def _add_tract_lines(
             na_color=na_color,
         )
 
-        x = [p[0] for p in centerline]
-        y = [p[1] for p in centerline]
-        z = [p[2] for p in centerline]
+        pts = np.asarray(centerline)
+        x, y, z = pts[:, 0], pts[:, 1], pts[:, 2]
 
         # Position based on hemisphere
         hemi = region_row.get("hemi", "midline")
-        x = _position_hemisphere(x, hemi)
+        x = _position_hemisphere(x.tolist(), hemi)
+        y, z = y.tolist(), z.tolist()
 
         hover_label = region_row.get(label_by, label)
         hover_text = str(hover_label)

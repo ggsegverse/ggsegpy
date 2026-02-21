@@ -178,22 +178,38 @@ class geom_brain:
 
 
 def _extract_coordinates(gdf: gpd.GeoDataFrame) -> pd.DataFrame:
-    rows = []
-    for idx, row in gdf.iterrows():
-        geom = row.geometry
+    import numpy as np
+
+    non_geom_cols = [c for c in gdf.columns if c != "geometry"]
+    all_coords = []
+    all_groups = []
+    all_row_indices = []
+
+    for idx, geom in enumerate(gdf.geometry):
         if geom is None:
             continue
 
-        coords = _get_polygon_coords(geom)
-        for ring_idx, ring_coords in enumerate(coords):
-            for x, y in ring_coords:
-                row_dict = row.drop("geometry").to_dict()
-                row_dict["x"] = x
-                row_dict["y"] = y
-                row_dict["group_id"] = f"{idx}_{ring_idx}"
-                rows.append(row_dict)
+        rings = _get_polygon_coords(geom)
+        for ring_idx, ring_coords in enumerate(rings):
+            if not ring_coords:
+                continue
+            coords_arr = np.array(ring_coords)
+            n_points = len(coords_arr)
+            all_coords.append(coords_arr)
+            all_groups.extend([f"{idx}_{ring_idx}"] * n_points)
+            all_row_indices.extend([idx] * n_points)
 
-    return pd.DataFrame(rows)
+    if not all_coords:
+        return pd.DataFrame(columns=non_geom_cols + ["x", "y", "group_id"])
+
+    coords_combined = np.vstack(all_coords)
+
+    result = gdf[non_geom_cols].iloc[all_row_indices].reset_index(drop=True)
+    result["x"] = coords_combined[:, 0]
+    result["y"] = coords_combined[:, 1]
+    result["group_id"] = all_groups
+
+    return result
 
 
 def _get_polygon_coords(geom) -> list[list[tuple[float, float]]]:
