@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import geopandas as gpd
 import pandas as pd
@@ -254,7 +253,6 @@ def _generate_placeholder_ggseg(atlas: str) -> gpd.GeoDataFrame:
 
     if hemis:
         region_list = list(regions.items())
-        n_regions = len(region_list)
         cols = 7
 
         for hemi_idx, hemi in enumerate(hemis):
@@ -322,8 +320,6 @@ def _generate_placeholder_vertex_indices(atlas: str) -> pd.DataFrame:
 
 
 def _generate_placeholder_meshes(atlas: str) -> pd.DataFrame:
-    import numpy as np
-
     if atlas == "aseg":
         regions = _aseg_regions()
     else:
