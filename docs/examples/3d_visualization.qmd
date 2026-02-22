@@ -2,6 +2,13 @@
 title: 3D Visualization
 ---
 
+```{python}
+#| echo: false
+#| output: false
+import warnings
+warnings.filterwarnings('ignore')
+```
+
 The 3D plots use [Plotly](https://plotly.com/python/)—interactive out of the box. Drag to rotate, scroll to zoom.
 
 ```{python}

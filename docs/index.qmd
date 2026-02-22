@@ -6,6 +6,8 @@ subtitle: Brain atlas visualization in Python
 ```{python}
 #| echo: false
 #| output: false
+import matplotlib
+matplotlib.use('Agg')
 import warnings
 warnings.filterwarnings('ignore')
 ```

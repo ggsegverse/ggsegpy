@@ -2,6 +2,15 @@
 title: Getting Started
 ---
 
+```{python}
+#| echo: false
+#| output: false
+import matplotlib
+matplotlib.use('Agg')
+import warnings
+warnings.filterwarnings('ignore')
+```
+
 ## Installation
 
 ```bash

@@ -2,6 +2,15 @@
 title: Custom Data
 ---
 
+```{python}
+#| echo: false
+#| output: false
+import matplotlib
+matplotlib.use('Agg')
+import warnings
+warnings.filterwarnings('ignore')
+```
+
 The whole point of brain visualization is showing your own data—cortical thickness, activation maps, effect sizes.
 
 ## The join

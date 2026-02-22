@@ -2,6 +2,15 @@
 title: 2D Visualization
 ---
 
+```{python}
+#| echo: false
+#| output: false
+import matplotlib
+matplotlib.use('Agg')
+import warnings
+warnings.filterwarnings('ignore')
+```
+
 The 2D plots use [plotnine](https://plotnine.org/), Python's implementation of ggplot2. If you know ggplot2 from R, you're already home. If you don't, the grammar-of-graphics approach means plots build up from layers—data, aesthetics, geometries, scales, themes.
 
 ```{python}
