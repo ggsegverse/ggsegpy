@@ -65,10 +65,10 @@ ggplot() + geom_brain(atlas=no_frontal)
 
 ### Multiple patterns
 
-Pass a list to match multiple patterns:
+Use regex OR syntax to match multiple patterns:
 
 ```{python}
-motor_regions = atlas_region_keep(dk(), ["precentral", "postcentral"])
+motor_regions = atlas_region_keep(dk(), "precentral|postcentral")
 ggplot() + geom_brain(atlas=motor_regions)
 ```
 
