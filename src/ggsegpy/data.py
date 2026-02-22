@@ -22,10 +22,22 @@ class SurfaceMesh:
 
 
 @dataclass
+class BrainMeshes:
+    surfaces: dict[str, SurfaceMesh]
+
+    def get(self, surface: str = "inflated") -> SurfaceMesh | None:
+        return self.surfaces.get(surface)
+
+    @property
+    def available_surfaces(self) -> list[str]:
+        return list(self.surfaces.keys())
+
+
+@dataclass
 class CorticalData:
     ggseg: gpd.GeoDataFrame
     ggseg3d: pd.DataFrame
-    mesh: SurfaceMesh | None = None
+    mesh: BrainMeshes | None = None
 
     def __post_init__(self) -> None:
         required_ggseg_cols = {"label", "hemi", "region", "geometry"}

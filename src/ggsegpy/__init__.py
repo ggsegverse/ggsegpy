@@ -37,6 +37,7 @@ from ggsegpy.atlas_utils import (
 from ggsegpy.atlases import aseg, dk, tracula
 from ggsegpy.data import (
     AtlasData,
+    BrainMeshes,
     CorticalData,
     SubcorticalData,
     SurfaceMesh,
@@ -111,6 +112,7 @@ __all__ = [
     "brain_join",
     "BrainAtlas",
     "BrainFigure",
+    "BrainMeshes",
     "CorticalAtlas",
     "CorticalData",
     "dk",

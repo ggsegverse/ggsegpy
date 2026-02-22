@@ -7,6 +7,7 @@ import pandas as pd
 
 from ggsegpy.atlas import CorticalAtlas, SubcorticalAtlas, TractAtlas
 from ggsegpy.data import (
+    BrainMeshes,
     CorticalData,
     HemiMesh,
     SubcorticalData,
@@ -20,7 +21,7 @@ DATA_DIR = Path(__file__).parent / "data"
 def dk() -> CorticalAtlas:
     ggseg = _load_or_placeholder_ggseg("dk")
     ggseg3d = _load_or_placeholder_cortical_3d("dk")
-    mesh = _load_fsaverage5()
+    mesh = _load_brain_meshes()
     palette = _extract_palette(ggseg)
     core = _extract_core(ggseg)
 
@@ -63,38 +64,78 @@ def tracula() -> TractAtlas:
     )
 
 
-def _load_fsaverage5() -> SurfaceMesh | None:
+def _load_brain_meshes() -> BrainMeshes | None:
     import numpy as np
 
-    path = DATA_DIR / "fsaverage5.parquet"
-    if path.exists():
-        df = pd.read_parquet(path)
+    path = DATA_DIR / "brain_meshes.parquet"
+    if not path.exists():
+        path = DATA_DIR / "fsaverage5.parquet"
+        if path.exists():
+            return _load_legacy_fsaverage5(path)
+        return None
 
-        def make_hemi_mesh(row):
-            verts = pd.DataFrame(
-                {
-                    "x": np.array(row["vertices_x"]),
-                    "y": np.array(row["vertices_y"]),
-                    "z": np.array(row["vertices_z"]),
-                }
-            )
-            faces = pd.DataFrame(
-                {
-                    "i": np.array(row["faces_i"]),
-                    "j": np.array(row["faces_j"]),
-                    "k": np.array(row["faces_k"]),
-                }
-            )
-            return HemiMesh(vertices=verts, faces=faces)
+    df = pd.read_parquet(path)
 
-        lh_row = df[df["hemi"] == "lh"].iloc[0]
-        rh_row = df[df["hemi"] == "rh"].iloc[0]
+    def make_hemi_mesh(row):
+        verts = pd.DataFrame(
+            {
+                "x": np.array(row["vertices_x"]),
+                "y": np.array(row["vertices_y"]),
+                "z": np.array(row["vertices_z"]),
+            }
+        )
+        faces = pd.DataFrame(
+            {
+                "i": np.array(row["faces_i"]),
+                "j": np.array(row["faces_j"]),
+                "k": np.array(row["faces_k"]),
+            }
+        )
+        return HemiMesh(vertices=verts, faces=faces)
 
-        return SurfaceMesh(
+    surfaces = {}
+    for surface_name in df["surface"].unique():
+        surface_df = df[df["surface"] == surface_name]
+        lh_row = surface_df[surface_df["hemi"] == "lh"].iloc[0]
+        rh_row = surface_df[surface_df["hemi"] == "rh"].iloc[0]
+        surfaces[surface_name] = SurfaceMesh(
             lh=make_hemi_mesh(lh_row),
             rh=make_hemi_mesh(rh_row),
         )
-    return None
+
+    return BrainMeshes(surfaces=surfaces)
+
+
+def _load_legacy_fsaverage5(path) -> BrainMeshes | None:
+    import numpy as np
+
+    df = pd.read_parquet(path)
+
+    def make_hemi_mesh(row):
+        verts = pd.DataFrame(
+            {
+                "x": np.array(row["vertices_x"]),
+                "y": np.array(row["vertices_y"]),
+                "z": np.array(row["vertices_z"]),
+            }
+        )
+        faces = pd.DataFrame(
+            {
+                "i": np.array(row["faces_i"]),
+                "j": np.array(row["faces_j"]),
+                "k": np.array(row["faces_k"]),
+            }
+        )
+        return HemiMesh(vertices=verts, faces=faces)
+
+    lh_row = df[df["hemi"] == "lh"].iloc[0]
+    rh_row = df[df["hemi"] == "rh"].iloc[0]
+
+    mesh = SurfaceMesh(
+        lh=make_hemi_mesh(lh_row),
+        rh=make_hemi_mesh(rh_row),
+    )
+    return BrainMeshes(surfaces={"inflated": mesh})
 
 
 def _load_or_placeholder_ggseg(atlas: str) -> gpd.GeoDataFrame:

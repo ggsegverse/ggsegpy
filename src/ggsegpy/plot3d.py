@@ -45,6 +45,7 @@ def add_brain_meshes(
     palette: dict[str, str],
     na_color: str,
     na_alpha: float,
+    surface: str = "inflated",
 ) -> None:
     """Add brain meshes to a plotly figure.
 
@@ -71,6 +72,8 @@ def add_brain_meshes(
         Color for missing values.
     na_alpha
         Opacity for NA regions.
+    surface
+        Surface type for cortical atlases: 'inflated', 'pial', 'white', 'semi_inflated'.
     """
     raise NotImplementedError(
         f"No 3D rendering method for atlas type: {type(atlas).__name__}"
@@ -97,6 +100,7 @@ def _register_dispatch_methods():
         palette: dict[str, str],
         na_color: str,
         na_alpha: float,
+        surface: str = "inflated",
     ) -> None:
         """Dispatch method for cortical atlases - vertex coloring on shared mesh."""
         _add_cortical_surfaces(
@@ -109,6 +113,7 @@ def _register_dispatch_methods():
             palette=palette,
             na_color=na_color,
             na_alpha=na_alpha,
+            surface=surface,
         )
 
     @add_brain_meshes.register(SubcorticalAtlas)
@@ -122,6 +127,7 @@ def _register_dispatch_methods():
         palette: dict[str, str],
         na_color: str,
         na_alpha: float,
+        surface: str = "inflated",
     ) -> None:
         """Dispatch method for subcortical atlases - per-region meshes."""
         _add_subcortical_meshes(
@@ -147,6 +153,7 @@ def _register_dispatch_methods():
         palette: dict[str, str],
         na_color: str,
         na_alpha: float,
+        surface: str = "inflated",
     ) -> None:
         """Dispatch method for tract atlases - tube meshes along centerlines."""
         _add_tract_tubes(
@@ -191,7 +198,7 @@ def ggseg3d(
     hemisphere
         Hemisphere(s) to show: 'left', 'right', or list of both.
     surface
-        Surface type for cortical atlases: 'inflated', 'white', 'pial'.
+        Surface type for cortical atlases: 'inflated', 'pial', 'white', 'semi_inflated'.
     color
         Column name in data to use for coloring regions. If None, uses
         atlas palette colors.
@@ -265,6 +272,7 @@ def ggseg3d(
         palette=palette or atlas.palette,
         na_color=na_color,
         na_alpha=na_alpha,
+        surface=surface,
     )
 
     _configure_layout(fig, "white", show_legend)
@@ -295,18 +303,25 @@ def _add_cortical_surfaces(
     palette: dict[str, str],
     na_color: str,
     na_alpha: float,
+    surface: str = "inflated",
 ) -> None:
     ggseg3d_df = atlas.data.ggseg3d
-    mesh = atlas.data.mesh
+    meshes = atlas.data.mesh
     core = atlas.core
 
-    if mesh is None:
+    if meshes is None:
+        return
+
+    surface_mesh = meshes.get(surface)
+    if surface_mesh is None:
+        surface_mesh = meshes.get("inflated")
+    if surface_mesh is None:
         return
 
     hemis_to_render = core["hemi"].unique()
 
     for hemi in hemis_to_render:
-        hemi_mesh = mesh.lh if hemi == "left" else mesh.rh
+        hemi_mesh = surface_mesh.lh if hemi == "left" else surface_mesh.rh
 
         vertices = hemi_mesh.vertices.copy()
         faces = hemi_mesh.faces
@@ -693,7 +708,7 @@ def add_glassbrain(
     opacity
         Transparency level (0-1). Default is 0.3.
     surface
-        Surface type: 'inflated', 'white', 'pial'.
+        Surface type: 'inflated', 'pial', 'white', or 'semi_inflated'.
 
     Returns
     -------
@@ -705,14 +720,24 @@ def add_glassbrain(
     >>> fig = ggseg3d(atlas=aseg())
     >>> fig = add_glassbrain(fig, opacity=0.1)
     >>> fig = pan_camera(fig, "left lateral")
+
+    Use different brain surfaces:
+
+    >>> fig = add_glassbrain(fig, surface="pial")
+    >>> fig = add_glassbrain(fig, surface="white")
     """
     from ggsegpy.atlases import dk
 
     atlas = dk()
-    mesh = atlas.data.mesh
+    meshes = atlas.data.mesh
 
-    if mesh is None:
+    if meshes is None:
         return fig
+
+    surface_mesh = meshes.get(surface)
+    if surface_mesh is None:
+        available = meshes.available_surfaces
+        raise ValueError(f"Surface '{surface}' not found. Available: {available}")
 
     if hemisphere is None:
         hemis = ["left", "right"]
@@ -722,7 +747,7 @@ def add_glassbrain(
         hemis = hemisphere
 
     for hemi in hemis:
-        hemi_mesh = mesh.lh if hemi == "left" else mesh.rh
+        hemi_mesh = surface_mesh.lh if hemi == "left" else surface_mesh.rh
         vertices = hemi_mesh.vertices
         faces = hemi_mesh.faces
 
