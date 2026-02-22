@@ -737,7 +737,8 @@ def atlas_view_reorder(
 
         expanded_order = []
         for view in order:
-            hemis_in_view = geometry_df.loc[geometry_df["view"] == view, "_hemi"].unique()
+            view_mask = geometry_df["view"] == view
+            hemis_in_view = geometry_df.loc[view_mask, "_hemi"].unique()
             for hemi in ["left", "right", ""]:
                 if hemi in hemis_in_view:
                     expanded_order.append(f"{hemi} {view}")
@@ -752,7 +753,8 @@ def atlas_view_reorder(
     else:
         view_order_map = {view: idx for idx, view in enumerate(order)}
         geometry_df = geometry_df.copy()
-        geometry_df["_sort_order"] = geometry_df["view"].map(view_order_map).fillna(len(order))
+        sort_order = geometry_df["view"].map(view_order_map).fillna(len(order))
+        geometry_df["_sort_order"] = sort_order
         geometry_df = geometry_df.sort_values("_sort_order")
         geometry_df = geometry_df.drop(columns=["_sort_order"])
 
@@ -848,10 +850,12 @@ def _reposition_views(
     group_bounds = []
     for group_df in view_groups:
         bounds = group_df.total_bounds
-        group_bounds.append({
-            "x_range": (bounds[0], bounds[2]),
-            "y_range": (bounds[1], bounds[3]),
-        })
+        group_bounds.append(
+            {
+                "x_range": (bounds[0], bounds[2]),
+                "y_range": (bounds[1], bounds[3]),
+            }
+        )
 
     widths = [bounds["x_range"][1] - bounds["x_range"][0] for bounds in group_bounds]
     half_widths = [

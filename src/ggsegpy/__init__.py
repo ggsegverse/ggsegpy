@@ -34,12 +34,6 @@ from ggsegpy.atlas_utils import (
     atlas_view_reorder,
     atlas_views,
 )
-from ggsegpy.validation import (
-    is_cortical_atlas,
-    is_ggseg_atlas,
-    is_subcortical_atlas,
-    is_tract_atlas,
-)
 from ggsegpy.atlases import aseg, dk, tracula
 from ggsegpy.data import (
     AtlasData,
@@ -78,6 +72,12 @@ from ggsegpy.themes import (
     theme_brain_void,
     theme_custombrain,
     theme_darkbrain,
+)
+from ggsegpy.validation import (
+    is_cortical_atlas,
+    is_ggseg_atlas,
+    is_subcortical_atlas,
+    is_tract_atlas,
 )
 
 __version__ = "0.1.0"
