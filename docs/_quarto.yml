@@ -72,7 +72,9 @@ website:
 
 format:
   html:
-    theme: brand
+    theme:
+      light: [cosmo, brand, styles.scss]
+      dark: [darkly, brand, styles.scss]
     toc: true
     code-copy: true
     code-overflow: wrap

@@ -1,0 +1,60 @@
+/*-- scss:defaults --*/
+
+// Code block styling for both light and dark modes
+
+/*-- scss:rules --*/
+
+// Light mode code blocks
+html:not([data-bs-theme="dark"]) {
+  pre.sourceCode {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+  }
+
+  pre.sourceCode code {
+    color: #212529;
+  }
+
+  // Syntax highlighting for light mode
+  .sourceCode .co { color: #6c757d; } // comments
+  .sourceCode .kw { color: #0d6efd; } // keywords
+  .sourceCode .fu { color: #6f42c1; } // functions
+  .sourceCode .st { color: #198754; } // strings
+  .sourceCode .dv { color: #fd7e14; } // numbers
+  .sourceCode .op { color: #212529; } // operators
+  .sourceCode .bu { color: #6f42c1; } // builtins
+  .sourceCode .im { color: #0d6efd; } // imports
+}
+
+// Dark mode code blocks
+html[data-bs-theme="dark"] {
+  pre.sourceCode {
+    background-color: #1a2a2e;
+    border: 1px solid #29393e;
+  }
+
+  pre.sourceCode code {
+    color: #f2f0ef;
+  }
+
+  // Syntax highlighting for dark mode
+  .sourceCode .co { color: #8b949e; } // comments
+  .sourceCode .kw { color: #79c0ff; } // keywords
+  .sourceCode .fu { color: #d2a8ff; } // functions
+  .sourceCode .st { color: #a5d6ff; } // strings
+  .sourceCode .dv { color: #ffa657; } // numbers
+  .sourceCode .op { color: #f2f0ef; } // operators
+  .sourceCode .bu { color: #d2a8ff; } // builtins
+  .sourceCode .im { color: #79c0ff; } // imports
+}
+
+// Ensure inline code is also readable
+html:not([data-bs-theme="dark"]) code:not(.sourceCode) {
+  background-color: #f1f1f1;
+  color: #212529;
+}
+
+html[data-bs-theme="dark"] code:not(.sourceCode) {
+  background-color: #29393e;
+  color: #f2f0ef;
+}
