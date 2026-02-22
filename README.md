@@ -97,7 +97,7 @@ renamed = atlas_region_rename(dk(), "superior", "sup.")
 print([r for r in atlas_regions(renamed) if "sup." in r][:3])
 ```
 
-    ['sup.frontal', 'sup.parietal', 'sup.temporal']
+    ['banks of sup. temporal sulcus', 'sup. frontal', 'sup. parietal']
 
 ## Available Atlases
 
