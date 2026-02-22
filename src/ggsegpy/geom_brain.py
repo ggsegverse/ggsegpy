@@ -22,8 +22,34 @@ if TYPE_CHECKING:
     from ggsegpy.atlas import BrainAtlas
 
 
-class geom_brain:
-    """A plotnine-compatible layer for brain atlas visualization.
+class _BrainLayers:
+    """Container for multiple plotnine layers that can be added to ggplot."""
+
+    def __init__(self, layers: list):
+        self.layers = layers
+
+    def __radd__(self, gg):
+        for layer in self.layers:
+            layer.__radd__(gg)
+
+    def __add__(self, other):
+        return _BrainLayers(self.layers + [other])
+
+
+def geom_brain(
+    atlas: BrainAtlas | None = None,
+    mapping: aes_class | None = None,
+    data: pd.DataFrame | None = None,
+    hemi: str | list[str] | None = None,
+    view: str | list[str] | None = None,
+    position: position_brain | None = None,
+    color: str = "black",
+    size: float = 0.1,
+    na_fill: str = "grey",
+    show_legend: bool = True,
+    **kwargs: Any,
+) -> _BrainLayers:
+    """Create a plotnine-compatible layer for brain atlas visualization.
 
     Use with ggplot() to create 2D brain atlas plots. The atlas geometry
     is automatically extracted and rendered as polygons.
@@ -57,8 +83,8 @@ class geom_brain:
 
     Returns
     -------
-    geom_brain
-        A layer that can be added to a ggplot with +.
+    _BrainLayers
+        A set of layers that can be added to a ggplot with +.
 
     Examples
     --------
@@ -82,105 +108,64 @@ class geom_brain:
 
     >>> ggplot() + geom_brain(atlas=dk(), hemi="left", view="lateral")
     """
+    if atlas is None:
+        from ggsegpy.atlases import dk
 
-    def __init__(
-        self,
-        atlas: BrainAtlas | None = None,
-        mapping: aes_class | None = None,
-        data: pd.DataFrame | None = None,
-        hemi: str | list[str] | None = None,
-        view: str | list[str] | None = None,
-        position: position_brain | None = None,
-        color: str = "black",
-        size: float = 0.1,
-        na_fill: str = "grey",
-        show_legend: bool = True,
-        **kwargs: Any,
-    ):
-        self.atlas = atlas
-        self.mapping = mapping
-        self.data = data
-        self.hemi = hemi
-        self.view = view
-        self.position = position
-        self.color = color
-        self.size = size
-        self.na_fill = na_fill
-        self.show_legend = show_legend
-        self.kwargs = kwargs
+        atlas = dk()
 
-    def __radd__(self, gg):
-        """Allow ggplot() + geom_brain() syntax."""
-        return self._build_plot(gg)
+    sf = atlas.data.ggseg.copy()
 
-    def _build_plot(self, gg):
-        if self.atlas is None:
-            from ggsegpy.atlases import dk
+    if data is not None:
+        sf = brain_join(data, atlas)
 
-            atlas = dk()
-        else:
-            atlas = self.atlas
+    if hemi is not None:
+        hemis = [hemi] if isinstance(hemi, str) else hemi
+        sf = sf[sf["hemi"].isin(hemis)]
 
-        plot_data = self._prepare_plot_data(atlas, gg)
-        plot_data = _extract_coordinates(plot_data)
+    if view is not None:
+        views = [view] if isinstance(view, str) else view
+        sf = sf[sf["view"].isin(views)]
 
-        fill_col = self._determine_fill_column(plot_data)
+    pos = position if position is not None else position_brain()
+    sf = pos.apply(sf)
 
-        base_aes = aes(x="x", y="y", group="group_id", fill=fill_col)
+    plot_data = _extract_coordinates(sf)
+    fill_col = _determine_fill_column(plot_data, mapping)
 
-        result = gg + geom_polygon(
+    base_aes = aes(x="x", y="y", group="group_id", fill=fill_col)
+
+    layers = [
+        geom_polygon(
             data=plot_data,
             mapping=base_aes,
-            color=self.color,
-            size=self.size,
-            **self.kwargs,
-        )
+            color=color,
+            size=size,
+            show_legend=show_legend,
+            **kwargs,
+        ),
+        coord_fixed(),
+        theme_brain(),
+    ]
 
-        result = result + coord_fixed() + theme_brain()
+    if fill_col == "color":
+        layers.append(scale_fill_identity())
+    elif atlas.palette:
+        fill_palette = scale_fill_brain(atlas.palette, na_fill)
+        layers.append(scale_fill_manual(values=fill_palette, na_value=na_fill))
 
-        if fill_col == "color":
-            result = result + scale_fill_identity()
-        elif atlas.palette:
-            fill_palette = scale_fill_brain(atlas.palette, self.na_fill)
-            result = result + scale_fill_manual(
-                values=fill_palette, na_value=self.na_fill
-            )
+    return _BrainLayers(layers)
 
-        return result
 
-    def _prepare_plot_data(self, atlas: BrainAtlas, gg) -> gpd.GeoDataFrame:
-        sf = atlas.data.ggseg.copy()
+def _determine_fill_column(plot_data: pd.DataFrame, mapping: aes_class | None) -> str:
+    if mapping is not None and "fill" in mapping:
+        fill_var = mapping["fill"]
+        if isinstance(fill_var, str) and fill_var in plot_data.columns:
+            return fill_var
 
-        user_data = self.data
-        if user_data is None and hasattr(gg, "data") and gg.data is not None:
-            user_data = gg.data
+    if "color" in plot_data.columns:
+        return "color"
 
-        if user_data is not None:
-            sf = brain_join(user_data, atlas)
-
-        if self.hemi is not None:
-            hemis = [self.hemi] if isinstance(self.hemi, str) else self.hemi
-            sf = sf[sf["hemi"].isin(hemis)]
-
-        if self.view is not None:
-            views = [self.view] if isinstance(self.view, str) else self.view
-            sf = sf[sf["view"].isin(views)]
-
-        pos = self.position if self.position is not None else position_brain()
-        sf = pos.apply(sf)
-
-        return sf
-
-    def _determine_fill_column(self, plot_data: pd.DataFrame) -> str:
-        if self.mapping is not None and "fill" in self.mapping:
-            fill_var = self.mapping["fill"]
-            if isinstance(fill_var, str) and fill_var in plot_data.columns:
-                return fill_var
-
-        if "color" in plot_data.columns:
-            return "color"
-
-        return "region"
+    return "region"
 
 
 def _extract_coordinates(gdf: gpd.GeoDataFrame) -> pd.DataFrame:

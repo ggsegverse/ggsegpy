@@ -32,8 +32,7 @@ class TestGeomBrain:
         p = ggplot() + geom_brain(atlas=dk(), view="lateral")
         assert isinstance(p, ggplot)
 
-    def test_geom_brain_attributes(self):
+    def test_geom_brain_returns_layers(self):
         gb = geom_brain(atlas=dk(), hemi="left", view="lateral")
-        assert gb.atlas is not None
-        assert gb.hemi == "left"
-        assert gb.view == "lateral"
+        assert hasattr(gb, "layers")
+        assert len(gb.layers) > 0
