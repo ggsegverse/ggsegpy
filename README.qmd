@@ -11,13 +11,15 @@ fig-dpi: 150
 
 Brain atlas visualization in Python — port of the R [ggseg](https://ggseg.github.io/ggseg/) ecosystem.
 
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![PyPI](https://img.shields.io/pypi/v/ggsegpy.svg)](https://pypi.org/project/ggsegpy/)
 [![Tests](https://github.com/ggsegverse/ggsegpy/actions/workflows/test.yml/badge.svg)](https://github.com/ggsegverse/ggsegpy/actions/workflows/test.yml)
 [![Documentation](https://github.com/ggsegverse/ggsegpy/actions/workflows/docs.yml/badge.svg)](https://ggsegverse.github.io/ggsegpy/)
 
 ## Installation
 
 ```bash
-pip install ggsegpy
+pip install git+https://github.com/ggsegverse/ggsegpy.git
 ```
 
 ## 2D Visualization
