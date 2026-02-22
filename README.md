@@ -1,6 +1,3 @@
-# With custom data
-
-
 # ggsegpy
 
 Brain atlas visualization in Python — port of the R

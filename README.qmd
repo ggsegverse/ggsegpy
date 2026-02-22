@@ -29,7 +29,7 @@ from ggsegpy import geom_brain, dk
 ggplot() + geom_brain(atlas=dk())
 ```
 
-### With custom data
+**With custom data:**
 
 ```{python}
 import pandas as pd
