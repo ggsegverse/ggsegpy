@@ -20,6 +20,10 @@ def brain_join(
     Performs a left join, keeping all atlas regions with NaN for regions
     not in your data. Warns if data contains labels not found in the atlas.
 
+    For faceted plots, extra columns in your data (beyond join and value columns)
+    are treated as facet variables. The atlas is replicated for each unique
+    combination of facet values, ensuring the full brain appears in every facet.
+
     Parameters
     ----------
     data
@@ -55,6 +59,15 @@ def brain_join(
     ...     "value": [0.9, 0.7]
     ... })
     >>> merged = brain_join(data, dk())
+
+    Faceted data (atlas replicated per group):
+
+    >>> data = pd.DataFrame({
+    ...     "region": ["precentral", "precentral"],
+    ...     "group": ["A", "B"],
+    ...     "value": [0.9, 0.3]
+    ... })
+    >>> merged = brain_join(data, dk())  # Full brain for each group
     """
     sf = atlas.data.ggseg.copy()
 
@@ -83,9 +96,48 @@ def brain_join(
                 stacklevel=2,
             )
 
+    facet_cols = _detect_facet_columns(data, join_cols, sf.columns)
+
+    if facet_cols:
+        sf = _expand_atlas_for_facets(sf, data, facet_cols)
+        join_cols = join_cols + facet_cols
+
     merged = sf.merge(data, on=join_cols, how="left")
 
     return merged
+
+
+def _detect_facet_columns(
+    data: pd.DataFrame,
+    join_cols: list[str],
+    atlas_cols: pd.Index,
+) -> list[str]:
+    atlas_col_set = set(atlas_cols)
+    join_col_set = set(join_cols)
+    facet_cols = []
+    for col in data.columns:
+        if col in join_col_set or col in atlas_col_set:
+            continue
+        if pd.api.types.is_string_dtype(data[col]) or isinstance(
+            data[col].dtype, pd.CategoricalDtype
+        ):
+            facet_cols.append(col)
+    return facet_cols
+
+
+def _expand_atlas_for_facets(
+    sf: gpd.GeoDataFrame,
+    data: pd.DataFrame,
+    facet_cols: list[str],
+) -> gpd.GeoDataFrame:
+    facet_combos = data[facet_cols].drop_duplicates()
+    expanded_parts = []
+    for _, row in facet_combos.iterrows():
+        sf_copy = sf.copy()
+        for col in facet_cols:
+            sf_copy[col] = row[col]
+        expanded_parts.append(sf_copy)
+    return gpd.GeoDataFrame(pd.concat(expanded_parts, ignore_index=True))
 
 
 def _infer_atlas_column(sf: gpd.GeoDataFrame, values: pd.Series) -> str:

@@ -63,3 +63,17 @@ class TestBrainJoin:
         })
         with pytest.raises(ValueError, match="Cannot auto-detect"):
             brain_join(data, atlas)
+
+    def test_facet_expansion(self):
+        atlas = dk()
+        data = pd.DataFrame({
+            "region": ["precentral", "precentral"],
+            "group": ["A", "B"],
+            "value": [0.9, 0.3],
+        })
+        result = brain_join(data, atlas)
+        assert "group" in result.columns
+        assert set(result["group"].dropna().unique()) == {"A", "B"}
+        n_atlas_rows = len(atlas.data.ggseg)
+        n_groups = 2
+        assert len(result) == n_atlas_rows * n_groups
