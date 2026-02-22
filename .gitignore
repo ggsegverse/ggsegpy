@@ -62,6 +62,7 @@ Thumbs.db
 
 # Project specific
 *.parquet
+!src/ggsegpy/atlases/data/*.parquet
 snapshots/
 
 # Temporary export/test files
