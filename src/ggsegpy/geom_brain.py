@@ -23,17 +23,98 @@ if TYPE_CHECKING:
 
 
 class _BrainLayers:
-    """Container for multiple plotnine layers that can be added to ggplot."""
+    """Container for brain layers that defers data preparation until added to ggplot."""
 
-    def __init__(self, layers: list):
-        self.layers = layers
+    def __init__(
+        self,
+        atlas,
+        mapping,
+        hemi,
+        view,
+        position,
+        color,
+        size,
+        na_fill,
+        show_legend,
+        kwargs,
+    ):
+        self.atlas = atlas
+        self.mapping = mapping
+        self.hemi = hemi
+        self.view = view
+        self.position = position
+        self.color = color
+        self.size = size
+        self.na_fill = na_fill
+        self.show_legend = show_legend
+        self.kwargs = kwargs
+        self._extra_layers = []
+
+    @property
+    def layers(self):
+        return self._build_layers(None)
+
+    def _build_layers(self, gg_data):
+        atlas = self.atlas
+        if atlas is None:
+            from ggsegpy.atlases import dk
+
+            atlas = dk()
+
+        sf = atlas.data.ggseg.copy()
+
+        explicit_data = getattr(self, "_explicit_data", None)
+        if explicit_data is not None:
+            sf = brain_join(explicit_data, atlas)
+        elif gg_data is not None and len(gg_data) > 0:
+            sf = brain_join(gg_data, atlas)
+
+        if self.hemi is not None:
+            hemis = [self.hemi] if isinstance(self.hemi, str) else self.hemi
+            sf = sf[sf["hemi"].isin(hemis)]
+
+        if self.view is not None:
+            views = [self.view] if isinstance(self.view, str) else self.view
+            sf = sf[sf["view"].isin(views)]
+
+        pos = self.position if self.position is not None else position_brain()
+        sf = pos.apply(sf)
+
+        plot_data = _extract_coordinates(sf)
+        fill_col = _determine_fill_column(plot_data, self.mapping)
+
+        base_aes = aes(x="x", y="y", group="group_id", fill=fill_col)
+
+        layers = [
+            geom_polygon(
+                data=plot_data,
+                mapping=base_aes,
+                color=self.color,
+                size=self.size,
+                show_legend=self.show_legend,
+                **self.kwargs,
+            ),
+            coord_fixed(),
+            theme_brain(),
+        ]
+
+        if fill_col == "color":
+            layers.append(scale_fill_identity())
+        elif fill_col == "region" and atlas.palette:
+            fill_palette = scale_fill_brain(atlas.palette, self.na_fill)
+            layers.append(scale_fill_manual(values=fill_palette, na_value=self.na_fill))
+
+        return layers + self._extra_layers
 
     def __radd__(self, gg):
-        for layer in self.layers:
+        gg_data = getattr(gg, "data", None)
+        layers = self._build_layers(gg_data)
+        for layer in layers:
             layer.__radd__(gg)
 
     def __add__(self, other):
-        return _BrainLayers(self.layers + [other])
+        self._extra_layers.append(other)
+        return self
 
 
 def geom_brain(
@@ -108,52 +189,23 @@ def geom_brain(
 
     >>> ggplot() + geom_brain(atlas=dk(), hemi="left", view="lateral")
     """
-    if atlas is None:
-        from ggsegpy.atlases import dk
-
-        atlas = dk()
-
-    sf = atlas.data.ggseg.copy()
+    brain_layers = _BrainLayers(
+        atlas=atlas,
+        mapping=mapping,
+        hemi=hemi,
+        view=view,
+        position=position,
+        color=color,
+        size=size,
+        na_fill=na_fill,
+        show_legend=show_legend,
+        kwargs=kwargs,
+    )
 
     if data is not None:
-        sf = brain_join(data, atlas)
+        brain_layers._explicit_data = data
 
-    if hemi is not None:
-        hemis = [hemi] if isinstance(hemi, str) else hemi
-        sf = sf[sf["hemi"].isin(hemis)]
-
-    if view is not None:
-        views = [view] if isinstance(view, str) else view
-        sf = sf[sf["view"].isin(views)]
-
-    pos = position if position is not None else position_brain()
-    sf = pos.apply(sf)
-
-    plot_data = _extract_coordinates(sf)
-    fill_col = _determine_fill_column(plot_data, mapping)
-
-    base_aes = aes(x="x", y="y", group="group_id", fill=fill_col)
-
-    layers = [
-        geom_polygon(
-            data=plot_data,
-            mapping=base_aes,
-            color=color,
-            size=size,
-            show_legend=show_legend,
-            **kwargs,
-        ),
-        coord_fixed(),
-        theme_brain(),
-    ]
-
-    if fill_col == "color":
-        layers.append(scale_fill_identity())
-    elif atlas.palette:
-        fill_palette = scale_fill_brain(atlas.palette, na_fill)
-        layers.append(scale_fill_manual(values=fill_palette, na_value=na_fill))
-
-    return _BrainLayers(layers)
+    return brain_layers
 
 
 def _determine_fill_column(plot_data: pd.DataFrame, mapping: aes_class | None) -> str:
