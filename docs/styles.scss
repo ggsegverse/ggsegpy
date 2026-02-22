@@ -26,26 +26,35 @@ html:not([data-bs-theme="dark"]) {
   .sourceCode .im { color: #0d6efd; } // imports
 }
 
-// Dark mode code blocks
-html[data-bs-theme="dark"] {
+// Dark mode code blocks - multiple selectors for compatibility
+html[data-bs-theme="dark"],
+.quarto-dark,
+[data-theme="dark"] {
   pre.sourceCode {
-    background-color: #1a2a2e;
-    border: 1px solid #29393e;
+    background-color: #1e1e1e !important;
+    border: 1px solid #3d3d3d !important;
   }
 
-  pre.sourceCode code {
-    color: #f2f0ef;
+  pre.sourceCode code,
+  pre.sourceCode code span {
+    color: #d4d4d4 !important;
   }
 
   // Syntax highlighting for dark mode
-  .sourceCode .co { color: #8b949e; } // comments
-  .sourceCode .kw { color: #79c0ff; } // keywords
-  .sourceCode .fu { color: #d2a8ff; } // functions
-  .sourceCode .st { color: #a5d6ff; } // strings
-  .sourceCode .dv { color: #ffa657; } // numbers
-  .sourceCode .op { color: #f2f0ef; } // operators
-  .sourceCode .bu { color: #d2a8ff; } // builtins
-  .sourceCode .im { color: #79c0ff; } // imports
+  .sourceCode .co { color: #6a9955 !important; } // comments - green
+  .sourceCode .kw { color: #569cd6 !important; } // keywords - blue
+  .sourceCode .fu { color: #dcdcaa !important; } // functions - yellow
+  .sourceCode .st { color: #ce9178 !important; } // strings - orange
+  .sourceCode .dv { color: #b5cea8 !important; } // numbers - light green
+  .sourceCode .op { color: #d4d4d4 !important; } // operators
+  .sourceCode .bu { color: #4ec9b0 !important; } // builtins - teal
+  .sourceCode .im { color: #c586c0 !important; } // imports - purple
+  .sourceCode .cf { color: #c586c0 !important; } // control flow - purple
+  .sourceCode .at { color: #9cdcfe !important; } // attributes - light blue
+  .sourceCode .cn { color: #4fc1ff !important; } // constants - bright blue
+  .sourceCode .sc { color: #d7ba7d !important; } // special char - gold
+  .sourceCode .ss { color: #ce9178 !important; } // special string
+  .sourceCode .vs { color: #ce9178 !important; } // verbatim string
 }
 
 // Ensure inline code is also readable
@@ -54,7 +63,9 @@ html:not([data-bs-theme="dark"]) code:not(.sourceCode) {
   color: #212529;
 }
 
-html[data-bs-theme="dark"] code:not(.sourceCode) {
-  background-color: #29393e;
-  color: #f2f0ef;
+html[data-bs-theme="dark"] code:not(.sourceCode),
+.quarto-dark code:not(.sourceCode),
+[data-theme="dark"] code:not(.sourceCode) {
+  background-color: #2d2d2d !important;
+  color: #d4d4d4 !important;
 }
