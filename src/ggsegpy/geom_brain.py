@@ -77,7 +77,12 @@ class _BrainLayers:
             views = [self.view] if isinstance(self.view, str) else self.view
             sf = sf[sf["view"].isin(views)]
 
-        pos = self.position if self.position is not None else position_brain()
+        if self.position is not None:
+            pos = self.position
+        elif atlas.type == "cortical":
+            pos = position_brain()
+        else:
+            pos = position_brain(rows=None, cols="view")
         sf = pos.apply(sf)
 
         plot_data = _extract_coordinates(sf)
