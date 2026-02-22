@@ -218,6 +218,149 @@ def _extract_coordinates(gdf: gpd.GeoDataFrame) -> pd.DataFrame:
     return result
 
 
+def annotate_brain(
+    atlas: BrainAtlas | None = None,
+    position: position_brain | None = None,
+    hemi: str | list[str] | None = None,
+    view: str | list[str] | None = None,
+    size: float = 3,
+    colour: str = "grey30",
+    family: str = "mono",
+    nudge_y: float = 0,
+    **kwargs: Any,
+):
+    """Add view labels to brain atlas plots.
+
+    Annotates each brain view with a text label positioned above the
+    view's bounding box. For cortical atlases, labels show hemisphere
+    and view (e.g., "left lateral"). For subcortical and tract atlases,
+    labels show the view name directly.
+
+    Labels respect the repositioning done by position_brain(), so the
+    same position argument should be passed to both geom_brain() and
+    annotate_brain().
+
+    Parameters
+    ----------
+    atlas
+        A brain atlas object (e.g. dk(), aseg()).
+    position
+        A position_brain() object matching the one used in geom_brain().
+    hemi
+        Hemisphere(s) to include. If None, all hemispheres are included.
+    view
+        View(s) to include. If None, all views are included.
+    size
+        Text size in points. Default is 3.
+    colour
+        Text colour. Default is 'grey30'.
+    family
+        Font family. Default is 'mono'.
+    nudge_y
+        Additional vertical offset for labels. Default is 0.
+    **kwargs
+        Additional arguments passed to annotate().
+
+    Returns
+    -------
+    list
+        A list of plotnine annotation layers.
+
+    Examples
+    --------
+    >>> from plotnine import ggplot
+    >>> from ggsegpy import geom_brain, annotate_brain, dk, position_brain
+    >>> pos = position_brain()
+    >>> p = (
+    ...     ggplot()
+    ...     + geom_brain(atlas=dk(), position=pos, show_legend=False)
+    ...     + annotate_brain(atlas=dk(), position=pos)
+    ... )
+    """
+    from plotnine import annotate
+
+    if atlas is None:
+        from ggsegpy.atlases import dk
+
+        atlas = dk()
+
+    sf = atlas.data.ggseg.copy()
+
+    if hemi is not None:
+        hemis = [hemi] if isinstance(hemi, str) else hemi
+        sf = sf[sf["hemi"].isin(hemis)]
+
+    if view is not None:
+        views = [view] if isinstance(view, str) else view
+        sf = sf[sf["view"].isin(views)]
+
+    pos = position if position is not None else position_brain()
+    repositioned = pos.apply(sf)
+
+    label_df = _compute_label_positions(repositioned, atlas.type)
+
+    overall_bounds = repositioned.total_bounds
+    y_range = overall_bounds[3] - overall_bounds[1]
+    label_df["y"] = label_df["y"] + y_range * 0.02 + nudge_y
+
+    annotations = []
+    for _, row in label_df.iterrows():
+        annotations.append(
+            annotate(
+                "text",
+                x=row["x"],
+                y=row["y"],
+                label=row["label"],
+                size=size,
+                color=colour,
+                family=family,
+                **kwargs,
+            )
+        )
+
+    return annotations
+
+
+def _compute_label_positions(
+    repositioned: gpd.GeoDataFrame,
+    atlas_type: str,
+) -> pd.DataFrame:
+    """Compute label text and positions from repositioned brain data."""
+    has_hemi = "hemi" in repositioned.columns
+    has_view = "view" in repositioned.columns
+
+    if atlas_type == "cortical" and has_hemi and has_view:
+        groups = repositioned.groupby(["hemi", "view"], observed=True)
+
+        def make_label(group):
+            hemi_val = group["hemi"].iloc[0]
+            view_val = group["view"].iloc[0]
+            return f"{hemi_val} {view_val}"
+    else:
+        if has_view:
+            groups = repositioned.groupby("view", observed=True)
+
+            def make_label(group):
+                return group["view"].iloc[0]
+        elif has_hemi:
+            groups = repositioned.groupby("hemi", observed=True)
+
+            def make_label(group):
+                return group["hemi"].iloc[0]
+        else:
+            return pd.DataFrame(columns=["x", "y", "label"])
+
+    labels = []
+    for _, group in groups:
+        bounds = group.total_bounds
+        x = (bounds[0] + bounds[2]) / 2
+        y = bounds[3]
+        label = make_label(group)
+        labels.append({"x": x, "y": y, "label": label})
+
+    return pd.DataFrame(labels)
+
+
 def _get_polygon_coords(geom) -> list[list[tuple[float, float]]]:
     from shapely.geometry import MultiPolygon, Polygon
 

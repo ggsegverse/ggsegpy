@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import partial, singledispatch
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -10,6 +11,158 @@ from ggsegpy.join import brain_join
 
 if TYPE_CHECKING:
     from ggsegpy.atlas import BrainAtlas
+
+
+class BrainFigure(go.Figure):
+    """Plotly Figure with pipe operator support for R-style chaining.
+
+    Extends go.Figure to allow pipe-style syntax:
+
+        ggseg3d(atlas=dk()) | pan_camera("left lateral") | set_background("black")
+
+    This mirrors R ggseg3d's pipe syntax:
+
+        ggseg3d(atlas=dk) |> pan_camera("left lateral") |> set_background("black")
+    """
+
+    def __or__(self, other):
+        """Enable pipe operator: fig | func(args)."""
+        if callable(other):
+            return other(self)
+        if isinstance(other, partial):
+            return other(self)
+        raise TypeError(f"Cannot pipe to {type(other)}")
+
+
+@singledispatch
+def add_brain_meshes(
+    atlas,
+    fig: go.Figure,
+    data: pd.DataFrame | None,
+    color: str | None,
+    label_by: str,
+    text_by: str | None,
+    palette: dict[str, str],
+    na_color: str,
+    na_alpha: float,
+) -> None:
+    """Add brain meshes to a plotly figure.
+
+    This is a generic function that dispatches based on atlas type,
+    similar to R's S3 method dispatch (e.g., prepare_brain_meshes.cortical_atlas).
+
+    Parameters
+    ----------
+    atlas
+        Brain atlas object (CorticalAtlas, SubcorticalAtlas, or TractAtlas).
+    fig
+        Plotly figure to add meshes to.
+    data
+        Merged data with color values.
+    color
+        Column name for coloring.
+    label_by
+        Column for hover labels.
+    text_by
+        Additional column for hover text.
+    palette
+        Color palette dict.
+    na_color
+        Color for missing values.
+    na_alpha
+        Opacity for NA regions.
+    """
+    raise NotImplementedError(
+        f"No 3D rendering method for atlas type: {type(atlas).__name__}"
+    )
+
+
+def _register_dispatch_methods():
+    """Register singledispatch methods for each atlas type.
+
+    Called at module load to register CorticalAtlas, SubcorticalAtlas,
+    and TractAtlas handlers. This is done in a function to avoid
+    circular imports.
+    """
+    from ggsegpy.atlas import CorticalAtlas, SubcorticalAtlas, TractAtlas
+
+    @add_brain_meshes.register(CorticalAtlas)
+    def _add_cortical(
+        atlas: CorticalAtlas,
+        fig: go.Figure,
+        data: pd.DataFrame | None,
+        color: str | None,
+        label_by: str,
+        text_by: str | None,
+        palette: dict[str, str],
+        na_color: str,
+        na_alpha: float,
+    ) -> None:
+        """Dispatch method for cortical atlases - vertex coloring on shared mesh."""
+        _add_cortical_surfaces(
+            fig=fig,
+            atlas=atlas,
+            data=data,
+            color=color,
+            label_by=label_by,
+            text_by=text_by,
+            palette=palette,
+            na_color=na_color,
+            na_alpha=na_alpha,
+        )
+
+    @add_brain_meshes.register(SubcorticalAtlas)
+    def _add_subcortical(
+        atlas: SubcorticalAtlas,
+        fig: go.Figure,
+        data: pd.DataFrame | None,
+        color: str | None,
+        label_by: str,
+        text_by: str | None,
+        palette: dict[str, str],
+        na_color: str,
+        na_alpha: float,
+    ) -> None:
+        """Dispatch method for subcortical atlases - per-region meshes."""
+        _add_subcortical_meshes(
+            fig=fig,
+            atlas=atlas,
+            data=data,
+            color=color,
+            label_by=label_by,
+            text_by=text_by,
+            palette=palette,
+            na_color=na_color,
+            na_alpha=na_alpha,
+        )
+
+    @add_brain_meshes.register(TractAtlas)
+    def _add_tract(
+        atlas: TractAtlas,
+        fig: go.Figure,
+        data: pd.DataFrame | None,
+        color: str | None,
+        label_by: str,
+        text_by: str | None,
+        palette: dict[str, str],
+        na_color: str,
+        na_alpha: float,
+    ) -> None:
+        """Dispatch method for tract atlases - tube meshes along centerlines."""
+        _add_tract_tubes(
+            fig=fig,
+            atlas=atlas,
+            data=data,
+            color=color,
+            label_by=label_by,
+            text_by=text_by,
+            palette=palette,
+            na_color=na_color,
+            na_alpha=na_alpha,
+        )
+
+
+_register_dispatch_methods()
 
 
 def ggseg3d(
@@ -25,7 +178,7 @@ def ggseg3d(
     na_alpha: float = 1.0,
     show_legend: bool = True,
     **kwargs: Any,
-) -> go.Figure:
+) -> BrainFigure:
     """Create an interactive 3D brain atlas visualization.
 
     Parameters
@@ -98,44 +251,21 @@ def ggseg3d(
     if data is not None:
         merged_data = brain_join(data, atlas)
 
-    fig = go.Figure()
+    fig = BrainFigure()
 
-    if atlas.type == "cortical":
-        _add_cortical_surfaces(
-            fig=fig,
-            atlas=atlas,
-            data=merged_data,
-            color=color,
-            label_by=label_by,
-            text_by=text_by,
-            palette=palette or atlas.palette,
-            na_color=na_color,
-            na_alpha=na_alpha,
-        )
-    elif atlas.type == "subcortical":
-        _add_subcortical_meshes(
-            fig=fig,
-            atlas=atlas,
-            data=merged_data,
-            color=color,
-            label_by=label_by,
-            text_by=text_by,
-            palette=palette or atlas.palette,
-            na_color=na_color,
-            na_alpha=na_alpha,
-        )
-    elif atlas.type == "tract":
-        _add_tract_lines(
-            fig=fig,
-            atlas=atlas,
-            data=merged_data,
-            color=color,
-            label_by=label_by,
-            text_by=text_by,
-            palette=palette or atlas.palette,
-            na_color=na_color,
-            na_alpha=na_alpha,
-        )
+    # Dispatch to appropriate renderer based on atlas type
+    # Uses singledispatch for S3-style method dispatch
+    add_brain_meshes(
+        atlas,
+        fig=fig,
+        data=merged_data,
+        color=color,
+        label_by=label_by,
+        text_by=text_by,
+        palette=palette or atlas.palette,
+        na_color=na_color,
+        na_alpha=na_alpha,
+    )
 
     _configure_layout(fig, "white", show_legend)
 
@@ -435,15 +565,23 @@ def _configure_layout(
 
 
 def pan_camera(
-    fig: go.Figure,
+    fig: go.Figure | str | None = None,
     camera: str = "left lateral",
-) -> go.Figure:
+) -> go.Figure | partial:
     """Set camera position using R ggseg3d-style view names.
+
+    Supports both direct calls and pipe syntax:
+
+        # Direct call
+        fig = pan_camera(fig, "left lateral")
+
+        # Pipe syntax
+        fig = ggseg3d() | pan_camera("left lateral")
 
     Parameters
     ----------
     fig
-        The plotly figure to modify.
+        The plotly figure to modify. Can be omitted for pipe syntax.
     camera
         Camera view position. Available views:
 
@@ -463,8 +601,15 @@ def pan_camera(
     --------
     >>> fig = ggseg3d(atlas=dk())
     >>> fig = pan_camera(fig, "left lateral")
-    >>> fig = pan_camera(fig, "right medial")
+
+    >>> # Or using pipe syntax:
+    >>> fig = ggseg3d() | pan_camera("left lateral")
     """
+    if fig is None or isinstance(fig, str):
+        if isinstance(fig, str):
+            camera = fig
+        return partial(pan_camera, camera=camera)
+
     camera_positions = {
         "left lateral": dict(eye=dict(x=-2.0, y=0, z=0)),
         "right lateral": dict(eye=dict(x=2.0, y=0, z=0)),
@@ -492,15 +637,20 @@ def pan_camera(
 
 
 def set_background(
-    fig: go.Figure,
+    fig: go.Figure | str | None = None,
     colour: str = "#ffffff",
-) -> go.Figure:
+) -> go.Figure | partial:
     """Set the background color of the 3D plot.
+
+    Supports both direct calls and pipe syntax:
+
+        fig = set_background(fig, "black")
+        fig = ggseg3d() | set_background("black")
 
     Parameters
     ----------
     fig
-        The plotly figure to modify.
+        The plotly figure to modify. Can be omitted for pipe syntax.
     colour
         Background color as hex string or color name.
 
@@ -509,6 +659,11 @@ def set_background(
     go.Figure
         The modified figure (allows chaining).
     """
+    if fig is None or isinstance(fig, str):
+        if isinstance(fig, str):
+            colour = fig
+        return partial(set_background, colour=colour)
+
     fig.update_layout(
         scene=dict(bgcolor=colour),
         paper_bgcolor=colour,
@@ -593,15 +748,17 @@ def add_glassbrain(
 
 
 def set_legend(
-    fig: go.Figure,
+    fig: go.Figure | bool | None = None,
     show: bool = True,
-) -> go.Figure:
+) -> go.Figure | partial:
     """Configure the legend visibility.
+
+    Supports pipe syntax: ggseg3d() | set_legend(False)
 
     Parameters
     ----------
     fig
-        The plotly figure to modify.
+        The plotly figure to modify. Can be omitted for pipe syntax.
     show
         Whether to show the legend.
 
@@ -610,23 +767,32 @@ def set_legend(
     go.Figure
         The modified figure (allows chaining).
     """
+    if fig is None or isinstance(fig, bool):
+        if isinstance(fig, bool):
+            show = fig
+        return partial(set_legend, show=show)
+
     fig.update_layout(showlegend=show)
     return fig
 
 
-def remove_legend(fig: go.Figure) -> go.Figure:
+def remove_legend(fig: go.Figure | None = None) -> go.Figure | partial:
     """Remove the legend from the plot.
+
+    Supports pipe syntax: ggseg3d() | remove_legend()
 
     Parameters
     ----------
     fig
-        The plotly figure to modify.
+        The plotly figure to modify. Can be omitted for pipe syntax.
 
     Returns
     -------
     go.Figure
         The modified figure (allows chaining).
     """
+    if fig is None:
+        return partial(remove_legend)
     return set_legend(fig, show=False)
 
 
@@ -637,10 +803,19 @@ def set_hover(
 ) -> go.Figure:
     """Configure hover information.
 
-    Args:
-        fig: The plotly figure
-        show: Whether to show hover info
-        template: Custom hover template string
+    Parameters
+    ----------
+    fig
+        The plotly figure to modify.
+    show
+        Whether to show hover info.
+    template
+        Custom hover template string.
+
+    Returns
+    -------
+    go.Figure
+        The modified figure (allows chaining).
     """
     hoverinfo = "text" if show else "skip"
 
@@ -650,3 +825,401 @@ def set_hover(
             trace.hovertemplate = template
 
     return fig
+
+
+def set_flat_shading(
+    fig: go.Figure | bool | None = None,
+    flat: bool = True,
+) -> go.Figure | partial:
+    """Set flat shading mode for mesh surfaces.
+
+    Flat shading uses a single color per face rather than smooth
+    interpolation across vertices. This gives a faceted appearance
+    that can help distinguish region boundaries.
+
+    Supports pipe syntax: ggseg3d() | set_flat_shading(True)
+
+    Parameters
+    ----------
+    fig
+        The plotly figure to modify. Can be omitted for pipe syntax.
+    flat
+        Whether to use flat shading.
+
+    Returns
+    -------
+    go.Figure
+        The modified figure (allows chaining).
+    """
+    if fig is None or isinstance(fig, bool):
+        if isinstance(fig, bool):
+            flat = fig
+        return partial(set_flat_shading, flat=flat)
+
+    for trace in fig.data:
+        if isinstance(trace, go.Mesh3d):
+            trace.flatshading = flat
+
+    return fig
+
+
+def set_orthographic(
+    fig: go.Figure | bool | None = None,
+    orthographic: bool = True,
+) -> go.Figure | partial:
+    """Toggle orthographic projection mode.
+
+    Orthographic projection removes perspective distortion,
+    making parallel lines appear parallel. This is useful for
+    anatomical views where accurate proportions matter.
+
+    Supports pipe syntax: ggseg3d() | set_orthographic(True)
+
+    Parameters
+    ----------
+    fig
+        The plotly figure to modify. Can be omitted for pipe syntax.
+    orthographic
+        Whether to use orthographic projection. False uses perspective.
+
+    Returns
+    -------
+    go.Figure
+        The modified figure (allows chaining).
+    """
+    if fig is None or isinstance(fig, bool):
+        if isinstance(fig, bool):
+            orthographic = fig
+        return partial(set_orthographic, orthographic=orthographic)
+
+    projection_type = "orthographic" if orthographic else "perspective"
+    fig.update_layout(scene_camera=dict(projection=dict(type=projection_type)))
+    return fig
+
+
+def set_opacity(
+    fig: go.Figure | float | None = None,
+    opacity: float = 1.0,
+    traces: str | list[str] | None = None,
+) -> go.Figure | partial:
+    """Set opacity for mesh traces.
+
+    Supports pipe syntax: ggseg3d() | set_opacity(0.5)
+
+    Parameters
+    ----------
+    fig
+        The plotly figure to modify. Can be omitted for pipe syntax.
+    opacity
+        Opacity value between 0 (transparent) and 1 (opaque).
+    traces
+        Trace names to modify. If None, modifies all traces.
+
+    Returns
+    -------
+    go.Figure
+        The modified figure (allows chaining).
+    """
+    if fig is None or isinstance(fig, (int, float)) and not isinstance(fig, go.Figure):
+        if isinstance(fig, (int, float)):
+            opacity = fig
+        return partial(set_opacity, opacity=opacity, traces=traces)
+
+    if traces is not None:
+        trace_names = [traces] if isinstance(traces, str) else traces
+    else:
+        trace_names = None
+
+    for trace in fig.data:
+        if trace_names is None or trace.name in trace_names:
+            trace.opacity = opacity
+
+    return fig
+
+
+def set_surface_color(
+    fig: go.Figure,
+    colour: str,
+    traces: str | list[str] | None = None,
+) -> go.Figure:
+    """Set uniform color for mesh surfaces.
+
+    Parameters
+    ----------
+    fig
+        The plotly figure to modify.
+    colour
+        Color to apply as hex string or color name.
+    traces
+        Trace names to modify. If None, modifies all mesh traces.
+
+    Returns
+    -------
+    go.Figure
+        The modified figure (allows chaining).
+    """
+    if traces is not None:
+        trace_names = [traces] if isinstance(traces, str) else traces
+    else:
+        trace_names = None
+
+    for trace in fig.data:
+        if trace_names is None or trace.name in trace_names:
+            if isinstance(trace, go.Mesh3d):
+                trace.color = colour
+                trace.vertexcolor = None
+
+    return fig
+
+
+def add_atlas(
+    fig: go.Figure,
+    atlas: BrainAtlas | None = None,
+    data: pd.DataFrame | None = None,
+    hemisphere: str | list[str] | None = None,
+    color: str | None = None,
+    palette: dict[str, str] | None = None,
+    na_color: str = "darkgrey",
+    opacity: float = 1.0,
+) -> go.Figure:
+    """Add an additional atlas to an existing figure.
+
+    Useful for overlaying subcortical structures on cortical surfaces,
+    or combining multiple atlases in a single visualization.
+
+    Parameters
+    ----------
+    fig
+        The plotly figure to add the atlas to.
+    atlas
+        Brain atlas to add.
+    data
+        DataFrame with values to map onto brain regions.
+    hemisphere
+        Hemisphere(s) to show: 'left', 'right', or list of both.
+    color
+        Column name in data to use for coloring regions.
+    palette
+        Custom color palette as dict mapping labels to colors.
+    na_color
+        Color for regions with missing data.
+    opacity
+        Opacity for the added atlas (0-1).
+
+    Returns
+    -------
+    go.Figure
+        The modified figure (allows chaining).
+
+    Examples
+    --------
+    >>> from ggsegpy import ggseg3d, add_atlas, dk, aseg
+    >>> fig = ggseg3d(atlas=dk())
+    >>> fig = add_atlas(fig, atlas=aseg(), opacity=0.8)
+    """
+    if atlas is None:
+        return fig
+
+    from ggsegpy.join import brain_join
+
+    if hemisphere is not None:
+        hemis = [hemisphere] if isinstance(hemisphere, str) else hemisphere
+        atlas = atlas.filter(hemi=hemis)
+
+    merged_data = None
+    if data is not None:
+        merged_data = brain_join(data, atlas)
+
+    use_palette = palette or atlas.palette
+
+    if atlas.type == "cortical":
+        _add_cortical_surfaces(
+            fig=fig,
+            atlas=atlas,
+            data=merged_data,
+            color=color,
+            label_by="region",
+            text_by=None,
+            palette=use_palette,
+            na_color=na_color,
+            na_alpha=opacity,
+        )
+    elif atlas.type == "subcortical":
+        _add_subcortical_meshes(
+            fig=fig,
+            atlas=atlas,
+            data=merged_data,
+            color=color,
+            label_by="region",
+            text_by=None,
+            palette=use_palette,
+            na_color=na_color,
+            na_alpha=opacity,
+        )
+    elif atlas.type == "tract":
+        _add_tract_tubes(
+            fig=fig,
+            atlas=atlas,
+            data=merged_data,
+            color=color,
+            label_by="region",
+            text_by=None,
+            palette=use_palette,
+            na_color=na_color,
+            na_alpha=opacity,
+        )
+
+    for trace in fig.data:
+        if hasattr(trace, "opacity") and trace.opacity is None:
+            trace.opacity = opacity
+
+    return fig
+
+
+def _add_tract_tubes(
+    fig: go.Figure,
+    atlas: BrainAtlas,
+    data: pd.DataFrame | None,
+    color: str | None,
+    label_by: str,
+    text_by: str | None,
+    palette: dict[str, str],
+    na_color: str,
+    na_alpha: float,
+    radius: float = 1.0,
+    n_sides: int = 8,
+) -> None:
+    """Add tract centerlines as tube meshes (like R ggseg3d)."""
+    ggseg3d_df = atlas.data.ggseg3d
+    core = atlas.core
+
+    for _, region_row in core.iterrows():
+        label = region_row["label"]
+
+        line_data = ggseg3d_df[ggseg3d_df["label"] == label]
+        if line_data.empty:
+            continue
+
+        centerline = line_data.iloc[0]["centerline"]
+        if centerline is None or len(centerline) < 2:
+            continue
+
+        region_color = _get_region_color(
+            label=label,
+            data=data,
+            color_col=color,
+            palette=palette,
+            na_color=na_color,
+        )
+
+        pts = np.asarray(centerline)
+
+        hemi = region_row.get("hemi", "midline")
+        if hemi == "left":
+            pts[:, 0] = pts[:, 0] - np.ptp(pts[:, 0]) / 2
+        elif hemi == "right":
+            pts[:, 0] = pts[:, 0] + np.ptp(pts[:, 0]) / 2
+
+        vertices, faces = _generate_tube_mesh(pts, radius=radius, n_sides=n_sides)
+
+        hover_label = region_row.get(label_by, label)
+        hover_text = str(hover_label)
+        if text_by and text_by in region_row:
+            hover_text += f"<br>{region_row[text_by]}"
+
+        fig.add_trace(
+            go.Mesh3d(
+                x=vertices[:, 0].tolist(),
+                y=vertices[:, 1].tolist(),
+                z=vertices[:, 2].tolist(),
+                i=faces[:, 0].tolist(),
+                j=faces[:, 1].tolist(),
+                k=faces[:, 2].tolist(),
+                color=region_color,
+                opacity=na_alpha,
+                name=label,
+                hovertext=hover_text,
+                hoverinfo="text",
+                showlegend=True,
+            )
+        )
+
+
+def _generate_tube_mesh(
+    centerline: np.ndarray,
+    radius: float = 1.0,
+    n_sides: int = 8,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Generate a tube mesh around a centerline curve.
+
+    Creates a cylindrical mesh that follows the path of the centerline,
+    similar to R ggseg3d's tract tube rendering.
+
+    Parameters
+    ----------
+    centerline
+        Nx3 array of centerline points.
+    radius
+        Tube radius.
+    n_sides
+        Number of sides for the tube cross-section.
+
+    Returns
+    -------
+    vertices
+        Mx3 array of vertex positions.
+    faces
+        Fx3 array of triangle face indices.
+    """
+    n_points = len(centerline)
+    if n_points < 2:
+        return np.empty((0, 3)), np.empty((0, 3), dtype=int)
+
+    tangents = np.diff(centerline, axis=0)
+    tangents = np.vstack([tangents, tangents[-1]])
+    tangents = tangents / (np.linalg.norm(tangents, axis=1, keepdims=True) + 1e-10)
+
+    initial_normal = np.array([0.0, 0.0, 1.0])
+    if abs(np.dot(tangents[0], initial_normal)) > 0.9:
+        initial_normal = np.array([0.0, 1.0, 0.0])
+
+    normals = np.zeros((n_points, 3))
+    binormals = np.zeros((n_points, 3))
+
+    normals[0] = np.cross(tangents[0], initial_normal)
+    normals[0] /= np.linalg.norm(normals[0]) + 1e-10
+    binormals[0] = np.cross(tangents[0], normals[0])
+
+    for i in range(1, n_points):
+        normals[i] = normals[i - 1] - np.dot(normals[i - 1], tangents[i]) * tangents[i]
+        norm = np.linalg.norm(normals[i])
+        if norm > 1e-10:
+            normals[i] /= norm
+        else:
+            normals[i] = normals[i - 1]
+        binormals[i] = np.cross(tangents[i], normals[i])
+
+    angles = np.linspace(0, 2 * np.pi, n_sides, endpoint=False)
+    cos_a = np.cos(angles)
+    sin_a = np.sin(angles)
+
+    vertices = np.zeros((n_points * n_sides, 3))
+    for i in range(n_points):
+        for j in range(n_sides):
+            offset = radius * (cos_a[j] * normals[i] + sin_a[j] * binormals[i])
+            vertices[i * n_sides + j] = centerline[i] + offset
+
+    faces = []
+    for i in range(n_points - 1):
+        for j in range(n_sides):
+            j_next = (j + 1) % n_sides
+
+            v0 = i * n_sides + j
+            v1 = i * n_sides + j_next
+            v2 = (i + 1) * n_sides + j
+            v3 = (i + 1) * n_sides + j_next
+
+            faces.append([v0, v2, v1])
+            faces.append([v1, v2, v3])
+
+    return vertices, np.array(faces, dtype=int)

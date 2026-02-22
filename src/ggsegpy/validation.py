@@ -63,3 +63,93 @@ def validate_atlas(atlas: BrainAtlas) -> tuple[list[str], list[str]]:
         warnings.extend(validate_palette(atlas.palette, labels))
 
     return errors, warnings
+
+
+def is_ggseg_atlas(x) -> bool:
+    """Check if object is a valid ggseg atlas.
+
+    Equivalent to R's is_ggseg_atlas(). Checks both class inheritance
+    and structural validity.
+
+    Parameters
+    ----------
+    x
+        Object to check.
+
+    Returns
+    -------
+    bool
+        True if x is a valid BrainAtlas.
+
+    Examples
+    --------
+    >>> from ggsegpy import dk, is_ggseg_atlas
+    >>> is_ggseg_atlas(dk())
+    True
+    >>> is_ggseg_atlas("not an atlas")
+    False
+    """
+    from ggsegpy.atlas import BrainAtlas
+
+    if not isinstance(x, BrainAtlas):
+        return False
+
+    try:
+        errors, _ = validate_atlas(x)
+        return len(errors) == 0
+    except Exception:
+        return False
+
+
+def is_cortical_atlas(x) -> bool:
+    """Check if object is a cortical atlas.
+
+    Parameters
+    ----------
+    x
+        Object to check.
+
+    Returns
+    -------
+    bool
+        True if x is a valid CorticalAtlas.
+    """
+    from ggsegpy.atlas import CorticalAtlas
+
+    return isinstance(x, CorticalAtlas) and is_ggseg_atlas(x)
+
+
+def is_subcortical_atlas(x) -> bool:
+    """Check if object is a subcortical atlas.
+
+    Parameters
+    ----------
+    x
+        Object to check.
+
+    Returns
+    -------
+    bool
+        True if x is a valid SubcorticalAtlas.
+    """
+    from ggsegpy.atlas import SubcorticalAtlas
+
+    return isinstance(x, SubcorticalAtlas) and is_ggseg_atlas(x)
+
+
+def is_tract_atlas(x) -> bool:
+    """Check if object is a tract atlas.
+
+    Parameters
+    ----------
+    x
+        Object to check.
+
+    Returns
+    -------
+    bool
+        True if x is a valid TractAtlas.
+    """
+    from ggsegpy.atlas import TractAtlas
+
+    return isinstance(x, TractAtlas) and is_ggseg_atlas(x)

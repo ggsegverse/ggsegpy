@@ -39,3 +39,57 @@ def scale_fill_brain(
     pal = palette.copy()
     pal["NA"] = na_value
     return pal
+
+
+def scale_fill_brain_manual(
+    palette: dict[str, str],
+    na_value: str = "grey",
+):
+    """Manual fill scale for brain plots.
+
+    Apply a custom named colour palette to brain atlas plots. Use this
+    when you want to override the atlas default colours with your own
+    colour mapping.
+
+    Parameters
+    ----------
+    palette
+        Named dict mapping region names to colours.
+    na_value
+        Colour for NA entries. Default is 'grey'.
+
+    Returns
+    -------
+    scale_fill_manual
+        A plotnine scale_fill_manual object.
+
+    Examples
+    --------
+    >>> from plotnine import ggplot, aes
+    >>> from ggsegpy import geom_brain, dk, scale_fill_brain_manual
+    >>> pal = {"insula": "red", "precentral": "blue"}
+    >>> p = (
+    ...     ggplot()
+    ...     + geom_brain(atlas=dk(), mapping=aes(fill="region"))
+    ...     + scale_fill_brain_manual(palette=pal)
+    ... )
+    """
+    from plotnine import scale_fill_manual
+
+    return scale_fill_manual(values=palette, na_value=na_value)
+
+
+def scale_colour_brain_manual(
+    palette: dict[str, str],
+    na_value: str = "grey",
+):
+    """Manual colour scale for brain plots.
+
+    See scale_fill_brain_manual for details.
+    """
+    from plotnine import scale_color_manual
+
+    return scale_color_manual(values=palette, na_value=na_value)
+
+
+scale_color_brain_manual = scale_colour_brain_manual
