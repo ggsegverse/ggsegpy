@@ -267,7 +267,7 @@ def annotate_brain(
     view: str | list[str] | None = None,
     size: float = 3,
     colour: str = "grey30",
-    family: str = "mono",
+    family: str = "monospace",
     nudge_y: float = 0,
     **kwargs: Any,
 ):
@@ -297,7 +297,7 @@ def annotate_brain(
     colour
         Text colour. Default is 'grey30'.
     family
-        Font family. Default is 'mono'.
+        Font family. Default is 'monospace'.
     nudge_y
         Additional vertical offset for labels. Default is 0.
     **kwargs

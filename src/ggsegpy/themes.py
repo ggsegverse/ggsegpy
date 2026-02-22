@@ -10,7 +10,7 @@ from plotnine import (
 
 def theme_brain(
     text_size: int = 12,
-    text_family: str = "mono",
+    text_family: str = "monospace",
 ) -> theme:
     """Clean theme for brain plots with minimal axes.
 
@@ -19,7 +19,7 @@ def theme_brain(
     text_size
         Base text size. Default is 12.
     text_family
-        Font family. Default is 'mono'.
+        Font family. Default is 'monospace'.
 
     Returns
     -------
@@ -53,7 +53,7 @@ def theme_brain(
 
 def theme_darkbrain(
     text_size: int = 12,
-    text_family: str = "mono",
+    text_family: str = "monospace",
 ) -> theme:
     """Dark theme for brain plots.
 
@@ -62,7 +62,7 @@ def theme_darkbrain(
     text_size
         Base text size. Default is 12.
     text_family
-        Font family. Default is 'mono'.
+        Font family. Default is 'monospace'.
 
     Returns
     -------
@@ -81,7 +81,7 @@ def theme_custombrain(
     plot_background: str = "white",
     text_colour: str = "darkgrey",
     text_size: int = 12,
-    text_family: str = "mono",
+    text_family: str = "monospace",
 ) -> theme:
     """Customizable theme for brain plots.
 
@@ -94,7 +94,7 @@ def theme_custombrain(
     text_size
         Base text size. Default is 12.
     text_family
-        Font family. Default is 'mono'.
+        Font family. Default is 'monospace'.
 
     Returns
     -------
@@ -128,7 +128,7 @@ def theme_custombrain(
 
 def theme_brain_void(
     text_size: int = 12,
-    text_family: str = "mono",
+    text_family: str = "monospace",
 ) -> theme:
     """Void theme with no axes, background, or grid.
 
@@ -137,7 +137,7 @@ def theme_brain_void(
     text_size
         Base text size. Default is 12.
     text_family
-        Font family. Default is 'mono'.
+        Font family. Default is 'monospace'.
 
     Returns
     -------
