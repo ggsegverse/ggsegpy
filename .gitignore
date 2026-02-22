@@ -52,6 +52,10 @@ docs/.quarto/
 docs/_freeze/
 .quarto/
 
+# Quartodoc generated files
+docs/reference/*.qmd
+docs/objects.json
+
 # OS
 .DS_Store
 Thumbs.db

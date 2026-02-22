@@ -1,6 +1,3 @@
-# With custom data
-
-
 # ggsegpy
 
 Brain atlas visualization in Python — port of the R
@@ -71,6 +68,33 @@ fig = pan_camera(fig, "left lateral")
 fig
 ```
 
+## Atlas Manipulation
+
+Filter, rename, and reorganize atlas regions:
+
+``` python
+from ggsegpy import atlas_region_keep, atlas_view_keep
+
+# Keep only frontal regions, lateral view
+frontal = atlas_region_keep(dk(), "frontal")
+frontal = atlas_view_keep(frontal, "lateral")
+
+ggplot() + geom_brain(atlas=frontal)
+```
+
+<img src="README_files/figure-commonmark/cell-7-output-1.png"
+width="525" height="375" />
+
+``` python
+from ggsegpy import atlas_region_rename, atlas_regions
+
+# Shorten region names
+renamed = atlas_region_rename(dk(), "superior", "sup.")
+print([r for r in atlas_regions(renamed) if "sup." in r][:3])
+```
+
+    ['banks of sup. temporal sulcus', 'sup. frontal', 'sup. parietal']
+
 ## Available Atlases
 
 | Atlas       | Type         | Description                         |
@@ -85,6 +109,7 @@ fig
   syntax)
 - 3D interactive visualization using
   [Plotly](https://plotly.com/python/)
+- Atlas manipulation: filter, rename, reorder regions and views
 - Easy data merging with `brain_join()`
 - Customizable themes: `theme_brain()`, `theme_darkbrain()`,
   `theme_custombrain()`

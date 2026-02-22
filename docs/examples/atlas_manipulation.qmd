@@ -1,0 +1,226 @@
+---
+title: Atlas Manipulation
+---
+
+Brain atlases ship with dozens of regions. Often you only need a subset—motor cortex for a movement study, or frontal regions for an executive function analysis. ggsegpy provides utilities to filter, rename, and reorganize atlas regions without touching the underlying data files.
+
+```{python}
+#| echo: false
+#| output: false
+import warnings
+warnings.filterwarnings('ignore')
+```
+
+## Inspecting atlas contents
+
+Start by seeing what's in an atlas:
+
+```{python}
+from ggsegpy import dk, atlas_regions, atlas_labels, atlas_views
+
+atlas = dk()
+
+print(f"Regions: {len(atlas_regions(atlas))}")
+print(f"Labels: {len(atlas_labels(atlas))}")
+print(f"Views: {atlas_views(atlas)}")
+```
+
+Regions are the anatomical names (e.g., "precentral"), labels include hemisphere prefixes (e.g., "lh_precentral"):
+
+```{python}
+print("First 5 regions:", atlas_regions(atlas)[:5])
+print("First 5 labels:", atlas_labels(atlas)[:5])
+```
+
+## Filtering regions
+
+### Keep only matching regions
+
+`atlas_region_keep()` filters to regions matching a pattern:
+
+```{python}
+from plotnine import ggplot
+from ggsegpy import geom_brain, atlas_region_keep
+
+frontal = atlas_region_keep(dk(), "frontal")
+print(f"Frontal regions: {atlas_regions(frontal)}")
+
+ggplot() + geom_brain(atlas=frontal)
+```
+
+The plot shows only frontal regions colored—everything else appears as grey context.
+
+### Remove matching regions
+
+`atlas_region_remove()` does the opposite:
+
+```{python}
+from ggsegpy import atlas_region_remove
+
+no_frontal = atlas_region_remove(dk(), "frontal")
+print(f"Regions after removing frontal: {len(atlas_regions(no_frontal))}")
+
+ggplot() + geom_brain(atlas=no_frontal)
+```
+
+### Multiple patterns
+
+Pass a list to match multiple patterns:
+
+```{python}
+motor_regions = atlas_region_keep(dk(), ["precentral", "postcentral"])
+ggplot() + geom_brain(atlas=motor_regions)
+```
+
+### Match on labels
+
+By default, patterns match against region names. Use `match_on="label"` to match against full labels:
+
+```{python}
+left_only = atlas_region_keep(dk(), "lh_", match_on="label")
+print(f"Left hemisphere labels: {len(atlas_labels(left_only))}")
+```
+
+## Renaming regions
+
+Shorten region names for cleaner legends:
+
+```{python}
+from ggsegpy import atlas_region_rename
+
+renamed = atlas_region_rename(dk(), "superior", "sup.")
+renamed = atlas_region_rename(renamed, "inferior", "inf.")
+
+# Check the changes
+print([r for r in atlas_regions(renamed) if "sup." in r or "inf." in r])
+```
+
+Use a function for complex transformations:
+
+```{python}
+uppercase = atlas_region_rename(dk(), ".*", lambda x: x.upper())
+print(atlas_regions(uppercase)[:5])
+```
+
+## Contextual regions
+
+`atlas_region_contextual()` removes regions from the data but keeps them visible as grey context:
+
+```{python}
+from ggsegpy import atlas_region_contextual
+
+# Remove temporal regions from data, keep them visible
+no_temporal = atlas_region_contextual(dk(), "temporal")
+
+print(f"Data regions: {len(atlas_regions(no_temporal))}")
+ggplot() + geom_brain(atlas=no_temporal)
+```
+
+Temporal regions appear grey rather than disappearing entirely.
+
+## View manipulation
+
+### Filtering views
+
+Keep only specific views:
+
+```{python}
+from ggsegpy import atlas_view_keep, atlas_view_remove
+
+lateral_only = atlas_view_keep(dk(), "lateral")
+print(f"Views: {atlas_views(lateral_only)}")
+
+ggplot() + geom_brain(atlas=lateral_only)
+```
+
+Remove views:
+
+```{python}
+medial_only = atlas_view_remove(dk(), "lateral")
+ggplot() + geom_brain(atlas=medial_only)
+```
+
+### Gathering views
+
+`atlas_view_gather()` repositions views into a compact layout:
+
+```{python}
+from ggsegpy import atlas_view_gather
+
+gathered = atlas_view_gather(dk())
+ggplot() + geom_brain(atlas=gathered)
+```
+
+Adjust spacing with the `gap` parameter (0.0 to 2.0):
+
+```{python}
+compact = atlas_view_gather(dk(), gap=0.05)
+ggplot() + geom_brain(atlas=compact)
+```
+
+### Reordering views
+
+Change the order views appear:
+
+```{python}
+from ggsegpy import atlas_view_reorder
+
+reordered = atlas_view_reorder(dk(), ["medial", "lateral"])
+ggplot() + geom_brain(atlas=reordered)
+```
+
+### Removing small geometries
+
+Clean up tiny fragments that sometimes appear in atlas data:
+
+```{python}
+from ggsegpy import atlas_view_remove_small
+
+# Remove geometries smaller than median area
+areas = dk().data.ggseg.geometry.area
+cleaned = atlas_view_remove_small(dk(), min_area=areas.median())
+```
+
+## Chaining operations
+
+All functions return a new atlas, so chain them with intermediate variables:
+
+```{python}
+atlas = dk()
+atlas = atlas_region_keep(atlas, "frontal")
+atlas = atlas_view_keep(atlas, "lateral")
+atlas = atlas_view_gather(atlas, gap=0.1)
+
+ggplot() + geom_brain(atlas=atlas)
+```
+
+## Adding metadata
+
+Enrich atlas regions with external data:
+
+```{python}
+import pandas as pd
+from ggsegpy import atlas_core_add
+
+lobe_data = pd.DataFrame({
+    "region": ["precentral", "postcentral", "superiorfrontal", "inferiorparietal"],
+    "lobe": ["frontal", "parietal", "frontal", "parietal"]
+})
+
+enriched = atlas_core_add(dk(), lobe_data, by="region")
+print(enriched.core[["region", "lobe"]].dropna().head())
+```
+
+## Subclass preservation
+
+All manipulation functions preserve the atlas subclass:
+
+```{python}
+from ggsegpy import atlas_region_remove
+
+filtered = atlas_region_remove(dk(), "banks")
+print(f"Original type: {type(dk()).__name__}")
+print(f"Filtered type: {type(filtered).__name__}")
+```
+
+A `CorticalAtlas` stays a `CorticalAtlas` through all transformations.

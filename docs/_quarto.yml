@@ -21,6 +21,8 @@ website:
             href: examples/3d_visualization.qmd
           - text: Custom Data
             href: examples/custom_data.qmd
+          - text: Atlas Manipulation
+            href: examples/atlas_manipulation.qmd
       - text: Reference
         href: reference/index.qmd
     right:
@@ -42,6 +44,17 @@ website:
             - reference/dk.qmd
             - reference/aseg.qmd
             - reference/tracula.qmd
+        - section: Atlas Utilities
+          contents:
+            - reference/atlas_regions.qmd
+            - reference/atlas_labels.qmd
+            - reference/atlas_views.qmd
+            - reference/atlas_region_remove.qmd
+            - reference/atlas_region_keep.qmd
+            - reference/atlas_region_rename.qmd
+            - reference/atlas_view_remove.qmd
+            - reference/atlas_view_keep.qmd
+            - reference/atlas_view_gather.qmd
         - section: 3D Modifiers
           contents:
             - reference/pan_camera.qmd
@@ -95,6 +108,26 @@ quartodoc:
       desc: Functions for joining data with atlases
       contents:
         - brain_join
+    - title: Atlas Utilities
+      desc: Functions for querying and manipulating atlases
+      contents:
+        - atlas_regions
+        - atlas_labels
+        - atlas_views
+        - atlas_palette
+        - atlas_sf
+        - atlas_type
+        - atlas_region_remove
+        - atlas_region_keep
+        - atlas_region_rename
+        - atlas_region_contextual
+        - atlas_view_remove
+        - atlas_view_keep
+        - atlas_view_gather
+        - atlas_view_reorder
+        - atlas_view_remove_region
+        - atlas_view_remove_small
+        - atlas_core_add
     - title: Themes
       desc: Plotnine themes for brain plots
       contents:

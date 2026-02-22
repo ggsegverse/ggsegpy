@@ -71,6 +71,28 @@ fig = pan_camera(fig, "left lateral")
 fig
 ```
 
+## Atlas Manipulation
+
+Filter, rename, and reorganize atlas regions:
+
+```{python}
+from ggsegpy import atlas_region_keep, atlas_view_keep
+
+# Keep only frontal regions, lateral view
+frontal = atlas_region_keep(dk(), "frontal")
+frontal = atlas_view_keep(frontal, "lateral")
+
+ggplot() + geom_brain(atlas=frontal)
+```
+
+```{python}
+from ggsegpy import atlas_region_rename, atlas_regions
+
+# Shorten region names
+renamed = atlas_region_rename(dk(), "superior", "sup.")
+print([r for r in atlas_regions(renamed) if "sup." in r][:3])
+```
+
 ## Available Atlases
 
 | Atlas | Type | Description |
@@ -83,6 +105,7 @@ fig
 
 - 2D visualization using [plotnine](https://plotnine.org/) (ggplot2 syntax)
 - 3D interactive visualization using [Plotly](https://plotly.com/python/)
+- Atlas manipulation: filter, rename, reorder regions and views
 - Easy data merging with `brain_join()`
 - Customizable themes: `theme_brain()`, `theme_darkbrain()`, `theme_custombrain()`
 - Glass brain overlays for 3D subcortical context

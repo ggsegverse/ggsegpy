@@ -102,3 +102,4 @@ ggplot(my_data) + geom_brain(atlas=dk(), mapping=aes(fill="value"))
 - [2D Visualization](examples/2d_visualization.qmd) — hemispheres, views, themes
 - [3D Visualization](examples/3d_visualization.qmd) — camera positions, glass brains
 - [Custom Data](examples/custom_data.qmd) — joining strategies, color scales
+- [Atlas Manipulation](examples/atlas_manipulation.qmd) — filter, rename, reorganize regions
