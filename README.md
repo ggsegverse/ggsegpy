@@ -1,3 +1,5 @@
+
+
 # ggsegpy
 
 Brain atlas visualization in Python — port of the R
@@ -23,6 +25,8 @@ ggplot() + geom_brain(atlas=dk())
 
 <img src="README_files/figure-commonmark/cell-2-output-1.png"
 width="525" height="375" />
+
+**With custom data:**
 
 ``` python
 import pandas as pd
