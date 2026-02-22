@@ -1,3 +1,6 @@
+# With custom data
+
+
 # ggsegpy
 
 Brain atlas visualization in Python — port of the R
@@ -93,7 +96,7 @@ renamed = atlas_region_rename(dk(), "superior", "sup.")
 print([r for r in atlas_regions(renamed) if "sup." in r][:3])
 ```
 
-    ['banks of sup. temporal sulcus', 'sup. frontal', 'sup. parietal']
+    ['sup.frontal', 'sup.parietal', 'sup.temporal']
 
 ## Available Atlases
 
