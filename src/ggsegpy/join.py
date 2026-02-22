@@ -64,25 +64,38 @@ def brain_join(
         if col not in data.columns:
             raise ValueError(f"Join column '{col}' not found in data")
 
-    atlas_labels = set(sf["label"].unique())
-    data_labels = set(data[join_cols[0]].unique()) if len(join_cols) == 1 else None
+    primary_col = join_cols[0]
+    atlas_col = primary_col
 
-    if data_labels:
-        unmatched = data_labels - atlas_labels
+    if primary_col not in sf.columns:
+        atlas_col = _infer_atlas_column(sf, data[primary_col])
+        data = data.rename(columns={primary_col: atlas_col})
+        join_cols = [atlas_col] + join_cols[1:]
+
+    if atlas_col in sf.columns:
+        atlas_values = set(sf[atlas_col].unique())
+        data_values = set(data[atlas_col].unique())
+        unmatched = data_values - atlas_values
         if unmatched:
             warnings.warn(
-                f"Data contains labels not in atlas: {unmatched}",
+                f"Data contains values not in atlas '{atlas_col}' column: {unmatched}",
                 UserWarning,
                 stacklevel=2,
             )
 
-    if len(join_cols) == 1 and join_cols[0] != "label":
-        data = data.rename(columns={join_cols[0]: "label"})
-        join_cols = ["label"]
-
     merged = sf.merge(data, on=join_cols, how="left")
 
     return merged
+
+
+def _infer_atlas_column(sf: gpd.GeoDataFrame, values: pd.Series) -> str:
+    sample_values = set(values.dropna().head(10))
+    for col in ["label", "region"]:
+        if col in sf.columns:
+            atlas_values = set(sf[col].unique())
+            if sample_values & atlas_values:
+                return col
+    return "label"
 
 
 def _detect_join_columns(

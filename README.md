@@ -32,7 +32,7 @@ width="525" height="375" />
 import pandas as pd
 
 data = pd.DataFrame({
-    "region": ["precentral", "postcentral", "superiorfrontal", "inferiorparietal"],
+    "region": ["precentral", "postcentral", "superior frontal", "inferior parietal"],
     "value": [0.9, 0.7, 0.5, 0.3]
 })
 
