@@ -104,99 +104,23 @@ print([r for r in atlas_regions(renamed) if "sup." in r][:3])
 
 ## Available Atlases
 
-### Bundled atlases
-
-Three atlases ship with ggsegpy — no download required:
-
 | Atlas       | Type         | Description                         |
 |-------------|--------------|-------------------------------------|
 | `dk()`      | Cortical     | Desikan-Killiany parcellation       |
 | `aseg()`    | Subcortical  | FreeSurfer subcortical segmentation |
 | `tracula()` | White matter | TRACULA tract atlas                 |
 
-### Downloadable atlases
-
-The [ggsegverse](https://github.com/ggsegverse) provides 19 additional atlases.
-Fetch them by name:
-
-``` python
-from ggsegpy import fetch_atlas
-
-destrieux = fetch_atlas("ggsegDestrieux")
-schaefer = fetch_atlas("ggsegSchaefer")
-```
-
-To see what's available:
-
-``` python
-from ggsegpy import list_atlases
-
-for name, info in list_atlases().items():
-    if info["exported"]:
-        print(f"{name}: {info['title']}")
-```
-
-Current atlases: ggsegAAL, ggsegAicha, ggsegArslan, ggsegBrainnetome, ggsegBrodmann, ggsegCampbell, ggsegDKT, ggsegDestrieux, ggsegEconomo, ggsegFlechsig, ggsegGlasser, ggsegGordon, ggsegHO, ggsegICBM, ggsegIca, ggsegKleist, ggsegPower, ggsegSchaefer, ggsegYeo2011.
-
-### Cache management
-
-Downloaded atlases live in `~/.cache/ggsegpy/` so you only download them once.
-
-``` python
-from ggsegpy import clear_cache
-
-clear_cache("ggsegDestrieux")  # remove one atlas
-clear_cache()                   # remove everything
-```
-
-If you need a fresh copy — maybe the upstream data changed — force a re-download:
-
-``` python
-atlas = fetch_atlas("ggsegDKT", force=True)
-```
-
-### Air-gapped environments
-
-No internet on your cluster?
-Grab the files manually and drop them in the cache directory.
-
-**1. Download from a connected machine**
-
-Visit [ggsegpy-data releases](https://github.com/ggsegverse/ggsegpy-data/releases) and download the parquet files you need.
-Each atlas has 2-3 files:
-
-- `{atlas}_core.parquet` — region metadata (label, hemisphere, color)
-- `{atlas}_2d.parquet` — 2D polygon geometry
-- `{atlas}_3d.parquet` — 3D vertex indices (if available)
-
-**2. Place files in cache**
-
-```
-~/.cache/ggsegpy/
-└── ggsegDestrieux/
-    └── v2.0.2/
-        ├── destrieux_core.parquet
-        ├── destrieux_2d.parquet
-        └── destrieux_3d.parquet
-```
-
-The version folder (e.g., `v2.0.2`) must match the version in the registry — check the release tag.
-
-**3. Copy registry.json**
-
-Download [registry.json](https://github.com/ggsegverse/ggsegpy-data/blob/main/registry.json) and place it at `~/.cache/ggsegpy/registry.json`.
-
-**4. Use normally**
-
-``` python
-atlas = fetch_atlas("ggsegDestrieux")  # uses cached files, no network request
-```
-
 ## Features
 
-ggsegpy gives you 2D visualization via [plotnine](https://plotnine.org/) (ggplot2 syntax) and 3D interactive plots via [Plotly](https://plotly.com/python/).
-You can filter, rename, and reorder atlas regions with the `atlas_*` functions, merge your data using `brain_join()`, and style plots with `theme_brain()`, `theme_darkbrain()`, or `theme_custombrain()`.
-For subcortical context in 3D, add a glass brain overlay.
+- 2D visualization using [plotnine](https://plotnine.org/) (ggplot2
+  syntax)
+- 3D interactive visualization using
+  [Plotly](https://plotly.com/python/)
+- Atlas manipulation: filter, rename, reorder regions and views
+- Easy data merging with `brain_join()`
+- Customizable themes: `theme_brain()`, `theme_darkbrain()`,
+  `theme_custombrain()`
+- Glass brain overlays for 3D subcortical context
 
 ## Documentation
 
