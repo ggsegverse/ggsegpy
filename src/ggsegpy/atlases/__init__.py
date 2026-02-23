@@ -19,11 +19,11 @@ DATA_DIR = Path(__file__).parent / "data"
 
 
 def dk() -> CorticalAtlas:
-    ggseg = _load_or_placeholder_ggseg("dk")
-    ggseg3d = _load_or_placeholder_cortical_3d("dk")
+    core = _load_core("dk")
+    ggseg = _load_ggseg("dk", core)
+    ggseg3d = _load_cortical_3d("dk")
     mesh = _load_brain_meshes()
-    palette = _extract_palette(ggseg)
-    core = _extract_core(ggseg)
+    palette = _extract_palette(core)
 
     return CorticalAtlas(
         atlas="dk",
@@ -35,10 +35,10 @@ def dk() -> CorticalAtlas:
 
 
 def aseg() -> SubcorticalAtlas:
-    ggseg = _load_or_placeholder_ggseg("aseg")
-    ggseg3d = _load_or_placeholder_subcortical_3d("aseg")
-    palette = _extract_palette(ggseg)
-    core = _extract_core(ggseg)
+    core = _load_core("aseg")
+    ggseg = _load_ggseg("aseg", core)
+    ggseg3d = _load_subcortical_3d("aseg")
+    palette = _extract_palette(core)
 
     return SubcorticalAtlas(
         atlas="aseg",
@@ -50,10 +50,10 @@ def aseg() -> SubcorticalAtlas:
 
 
 def tracula() -> TractAtlas:
-    ggseg = _load_or_placeholder_ggseg("tracula")
-    ggseg3d = _load_or_placeholder_tract_3d("tracula")
-    palette = _extract_palette(ggseg)
-    core = _extract_core(ggseg)
+    core = _load_core("tracula")
+    ggseg = _load_ggseg("tracula", core)
+    ggseg3d = _load_tract_3d("tracula")
+    palette = _extract_palette(core)
 
     return TractAtlas(
         atlas="tracula",
@@ -64,14 +64,52 @@ def tracula() -> TractAtlas:
     )
 
 
+def _load_core(atlas: str) -> pd.DataFrame:
+    path = DATA_DIR / f"{atlas}_core.parquet"
+    if path.exists():
+        return pd.read_parquet(path)
+    return _generate_placeholder_core(atlas)
+
+
+def _load_ggseg(atlas: str, core: pd.DataFrame) -> gpd.GeoDataFrame:
+    path = DATA_DIR / f"{atlas}_2d.parquet"
+    if path.exists():
+        from shapely import wkt
+
+        df = pd.read_parquet(path)
+        df["geometry"] = df["geometry_wkt"].apply(wkt.loads)
+        df = df.drop(columns=["geometry_wkt"])
+
+        df = df.merge(core, on="label", how="left")
+
+        hemi_missing = df["hemi"].isna()
+        if hemi_missing.any():
+            labels = df.loc[hemi_missing, "label"]
+            inferred_hemi = pd.Series("midline", index=labels.index)
+            inferred_hemi[labels.str.startswith("lh_")] = "left"
+            inferred_hemi[labels.str.startswith("rh_")] = "right"
+            df.loc[hemi_missing, "hemi"] = inferred_hemi
+
+        region_missing = df["region"].isna()
+        if region_missing.any():
+            labels = df.loc[region_missing, "label"]
+            has_prefix = labels.str.startswith(("lh_", "rh_"))
+            inferred_region = labels.copy()
+            inferred_region[has_prefix] = labels[has_prefix].str[3:]
+            df.loc[region_missing, "region"] = inferred_region
+
+        if "color" in df.columns:
+            df["color"] = df["color"].fillna("#A9A9A9")
+
+        return gpd.GeoDataFrame(df, geometry="geometry")
+    return _generate_placeholder_ggseg(atlas)
+
+
 def _load_brain_meshes() -> BrainMeshes | None:
     import numpy as np
 
     path = DATA_DIR / "brain_meshes.parquet"
     if not path.exists():
-        path = DATA_DIR / "fsaverage5.parquet"
-        if path.exists():
-            return _load_legacy_fsaverage5(path)
         return None
 
     df = pd.read_parquet(path)
@@ -106,75 +144,7 @@ def _load_brain_meshes() -> BrainMeshes | None:
     return BrainMeshes(surfaces=surfaces)
 
 
-def _load_legacy_fsaverage5(path) -> BrainMeshes | None:
-    import numpy as np
-
-    df = pd.read_parquet(path)
-
-    def make_hemi_mesh(row):
-        verts = pd.DataFrame(
-            {
-                "x": np.array(row["vertices_x"]),
-                "y": np.array(row["vertices_y"]),
-                "z": np.array(row["vertices_z"]),
-            }
-        )
-        faces = pd.DataFrame(
-            {
-                "i": np.array(row["faces_i"]),
-                "j": np.array(row["faces_j"]),
-                "k": np.array(row["faces_k"]),
-            }
-        )
-        return HemiMesh(vertices=verts, faces=faces)
-
-    lh_row = df[df["hemi"] == "lh"].iloc[0]
-    rh_row = df[df["hemi"] == "rh"].iloc[0]
-
-    mesh = SurfaceMesh(
-        lh=make_hemi_mesh(lh_row),
-        rh=make_hemi_mesh(rh_row),
-    )
-    return BrainMeshes(surfaces={"inflated": mesh})
-
-
-def _load_or_placeholder_ggseg(atlas: str) -> gpd.GeoDataFrame:
-    path = DATA_DIR / f"{atlas}.parquet"
-    if path.exists():
-        df = pd.read_parquet(path)
-        if "geometry_wkt" in df.columns:
-            from shapely import wkt
-
-            df["geometry"] = df["geometry_wkt"].apply(wkt.loads)
-            df = df.drop(columns=["geometry_wkt"])
-
-        # Fill missing hemi values from label prefix for context regions
-        hemi_missing = df["hemi"].isna()
-        if hemi_missing.any():
-            labels = df.loc[hemi_missing, "label"]
-            inferred_hemi = pd.Series("midline", index=labels.index)
-            inferred_hemi[labels.str.startswith("lh_")] = "left"
-            inferred_hemi[labels.str.startswith("rh_")] = "right"
-            df.loc[hemi_missing, "hemi"] = inferred_hemi
-
-        # Fill missing region from label
-        region_missing = df["region"].isna()
-        if region_missing.any():
-            labels = df.loc[region_missing, "label"]
-            has_prefix = labels.str.startswith(("lh_", "rh_"))
-            inferred_region = labels.copy()
-            inferred_region[has_prefix] = labels[has_prefix].str[3:]
-            df.loc[region_missing, "region"] = inferred_region
-
-        # Fill missing colors with grey for context regions
-        if "color" in df.columns:
-            df["color"] = df["color"].fillna("#A9A9A9")
-
-        return gpd.GeoDataFrame(df, geometry="geometry")
-    return _generate_placeholder_ggseg(atlas)
-
-
-def _load_or_placeholder_cortical_3d(atlas: str) -> pd.DataFrame:
+def _load_cortical_3d(atlas: str) -> pd.DataFrame:
     path = DATA_DIR / f"{atlas}_3d.parquet"
     if path.exists():
         df = pd.read_parquet(path)
@@ -184,7 +154,7 @@ def _load_or_placeholder_cortical_3d(atlas: str) -> pd.DataFrame:
     return _generate_placeholder_vertex_indices(atlas)
 
 
-def _load_or_placeholder_subcortical_3d(atlas: str) -> pd.DataFrame:
+def _load_subcortical_3d(atlas: str) -> pd.DataFrame:
     import numpy as np
 
     path = DATA_DIR / f"{atlas}_3d.parquet"
@@ -200,7 +170,7 @@ def _load_or_placeholder_subcortical_3d(atlas: str) -> pd.DataFrame:
                 return np.column_stack([vx, vy, vz]).tolist()
 
             def build_faces(row):
-                fi = np.asarray(row["faces_i"]) - 1  # R 1-indexed to Python 0-indexed
+                fi = np.asarray(row["faces_i"]) - 1
                 fj = np.asarray(row["faces_j"]) - 1
                 fk = np.asarray(row["faces_k"]) - 1
                 return np.column_stack([fi, fj, fk]).astype(int).tolist()
@@ -216,7 +186,7 @@ def _load_or_placeholder_subcortical_3d(atlas: str) -> pd.DataFrame:
     return _generate_placeholder_meshes(atlas)
 
 
-def _load_or_placeholder_tract_3d(atlas: str) -> pd.DataFrame:
+def _load_tract_3d(atlas: str) -> pd.DataFrame:
     import numpy as np
 
     path = DATA_DIR / f"{atlas}_3d.parquet"
@@ -245,91 +215,79 @@ def _load_or_placeholder_tract_3d(atlas: str) -> pd.DataFrame:
     return _generate_placeholder_centerlines(atlas)
 
 
-def _extract_palette(ggseg: gpd.GeoDataFrame) -> dict[str, str]:
-    if "color" in ggseg.columns:
-        colors = ggseg["color"].fillna("#A9A9A9")
-        return dict(zip(ggseg["label"], colors))
-    return _get_placeholder_palette(ggseg)
+def _extract_palette(core: pd.DataFrame) -> dict[str, str]:
+    if "color" in core.columns:
+        colors = core["color"].fillna("#A9A9A9")
+        return dict(zip(core["label"], colors))
+    return {label: "#A9A9A9" for label in core["label"]}
 
 
-def _extract_core(ggseg: gpd.GeoDataFrame) -> pd.DataFrame:
-    core_cols = ["hemi", "region", "label"]
-    return ggseg[core_cols].drop_duplicates(subset=["label"]).reset_index(drop=True)
-
-
-def _get_placeholder_palette(ggseg: gpd.GeoDataFrame) -> dict[str, str]:
-    labels = ggseg["label"].unique()
-    import numpy as np
-
-    hues = np.linspace(0, 360, len(labels), endpoint=False)
-    return {label: f"hsl({int(h)}, 70%, 50%)" for label, h in zip(labels, hues)}
+def _generate_placeholder_core(atlas: str) -> pd.DataFrame:
+    if atlas == "dk":
+        regions = _dk_regions()
+        rows = []
+        for hemi in ["left", "right"]:
+            prefix = "lh" if hemi == "left" else "rh"
+            for region, color in regions.items():
+                rows.append(
+                    {
+                        "label": f"{prefix}_{region}",
+                        "hemi": hemi,
+                        "region": region,
+                        "color": color,
+                    }
+                )
+        return pd.DataFrame(rows)
+    elif atlas == "aseg":
+        regions = _aseg_regions()
+        return pd.DataFrame(
+            [
+                {"label": label, "hemi": hemi, "region": region, "color": color}
+                for label, (hemi, region, color) in regions.items()
+            ]
+        )
+    elif atlas == "tracula":
+        regions = _tracula_regions()
+        rows = []
+        for hemi in ["left", "right"]:
+            prefix = "lh" if hemi == "left" else "rh"
+            for region, color in regions.items():
+                rows.append(
+                    {
+                        "label": f"{prefix}_{region}",
+                        "hemi": hemi,
+                        "region": region,
+                        "color": color,
+                    }
+                )
+        return pd.DataFrame(rows)
+    raise ValueError(f"Unknown atlas: {atlas}")
 
 
 def _generate_placeholder_ggseg(atlas: str) -> gpd.GeoDataFrame:
     from shapely.geometry import box
 
-    if atlas == "dk":
-        regions = _dk_regions()
-        hemis = ["left", "right"]
-    elif atlas == "aseg":
-        regions = _aseg_regions()
-        hemis = None
-    elif atlas == "tracula":
-        regions = _tracula_regions()
-        hemis = ["left", "right"]
-    else:
-        raise ValueError(f"Unknown atlas: {atlas}")
-
+    core = _generate_placeholder_core(atlas)
     rows = []
 
-    if hemis:
-        region_list = list(regions.items())
-        cols = 7
+    for _, core_row in core.iterrows():
+        label = core_row["label"]
+        hemi = core_row["hemi"]
+        region = core_row["region"]
+        color = core_row["color"]
 
-        for hemi_idx, hemi in enumerate(hemis):
-            hemi_prefix = "lh" if hemi == "left" else "rh"
-            for reg_idx, (region, color) in enumerate(region_list):
-                label = f"{hemi_prefix}_{region}"
-                col = reg_idx % cols
-                row = reg_idx // cols
-
-                for view_idx, view in enumerate(["lateral", "medial"]):
-                    x = col * 15 + view_idx * (cols * 15 + 20)
-                    y = row * 15 + hemi_idx * 80
-
-                    geom = box(x, y, x + 12, y + 12)
-                    rows.append(
-                        {
-                            "label": label,
-                            "hemi": hemi,
-                            "region": region,
-                            "view": view,
-                            "color": color,
-                            "geometry": geom,
-                        }
-                    )
-    else:
-        region_list = list(regions.items())
-        cols = 5
-        for reg_idx, (label, (hemi, region, color)) in enumerate(region_list):
-            col = reg_idx % cols
-            row = reg_idx // cols
-
-            for view_idx, view in enumerate(["lateral", "medial"]):
-                x = col * 15 + view_idx * (cols * 15 + 20)
-                y = row * 15
-
-                geom = box(x, y, x + 12, y + 12)
-                rows.append(
-                    {
-                        "label": label,
-                        "hemi": hemi,
-                        "region": region,
-                        "view": view,
-                        "color": color,
-                        "geometry": geom,
-                    }
-                )
+        for view_idx, view in enumerate(["lateral", "medial"]):
+            geom = box(view_idx * 100, 0, view_idx * 100 + 10, 10)
+            rows.append(
+                {
+                    "label": label,
+                    "hemi": hemi,
+                    "region": region,
+                    "view": view,
+                    "color": color,
+                    "geometry": geom,
+                }
+            )
 
     return gpd.GeoDataFrame(rows, crs="EPSG:4326")
 
@@ -337,31 +295,18 @@ def _generate_placeholder_ggseg(atlas: str) -> gpd.GeoDataFrame:
 def _generate_placeholder_vertex_indices(atlas: str) -> pd.DataFrame:
     import numpy as np
 
-    if atlas == "dk":
-        regions = _dk_regions()
-        hemis = ["left", "right"]
-    else:
-        raise ValueError(f"No cortical placeholder for: {atlas}")
-
+    core = _generate_placeholder_core(atlas)
     rows = []
-    for hemi in hemis:
-        hemi_prefix = "lh" if hemi == "left" else "rh"
-        for region in regions:
-            label = f"{hemi_prefix}_{region}"
-            vertex_indices = list(np.random.randint(0, 10000, size=50))
-            rows.append({"label": label, "vertex_indices": vertex_indices})
-
+    for label in core["label"]:
+        vertex_indices = list(np.random.randint(0, 10000, size=50))
+        rows.append({"label": label, "vertex_indices": vertex_indices})
     return pd.DataFrame(rows)
 
 
 def _generate_placeholder_meshes(atlas: str) -> pd.DataFrame:
-    if atlas == "aseg":
-        regions = _aseg_regions()
-    else:
-        raise ValueError(f"No subcortical placeholder for: {atlas}")
-
+    core = _generate_placeholder_core(atlas)
     rows = []
-    for idx, label in enumerate(regions.keys()):
+    for idx, label in enumerate(core["label"]):
         x_base = (idx % 5) * 20
         y_base = (idx // 5) * 20
         vertices = [
@@ -372,34 +317,21 @@ def _generate_placeholder_meshes(atlas: str) -> pd.DataFrame:
         ]
         faces = [[0, 1, 2], [0, 1, 3], [1, 2, 3], [0, 2, 3]]
         rows.append({"label": label, "vertices": vertices, "faces": faces})
-
     return pd.DataFrame(rows)
 
 
 def _generate_placeholder_centerlines(atlas: str) -> pd.DataFrame:
     import numpy as np
 
-    if atlas == "tracula":
-        regions = _tracula_regions()
-        hemis = ["left", "right"]
-    else:
-        raise ValueError(f"No tract placeholder for: {atlas}")
-
+    core = _generate_placeholder_core(atlas)
     rows = []
-    idx = 0
-    for hemi in hemis:
-        hemi_prefix = "lh" if hemi == "left" else "rh"
-        for region in regions:
-            label = f"{hemi_prefix}_{region}"
-            x_start = (idx % 4) * 30
-            y_start = (idx // 4) * 30
-            centerline = [
-                [x_start + i * 3, y_start + np.sin(i / 3) * 10, i * 2]
-                for i in range(20)
-            ]
-            rows.append({"label": label, "centerline": centerline})
-            idx += 1
-
+    for idx, label in enumerate(core["label"]):
+        x_start = (idx % 4) * 30
+        y_start = (idx // 4) * 30
+        centerline = [
+            [x_start + i * 3, y_start + np.sin(i / 3) * 10, i * 2] for i in range(20)
+        ]
+        rows.append({"label": label, "centerline": centerline})
     return pd.DataFrame(rows)
 
 
