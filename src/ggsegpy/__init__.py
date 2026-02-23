@@ -35,6 +35,7 @@ from ggsegpy.atlas_utils import (
     atlas_views,
 )
 from ggsegpy.atlases import aseg, dk, tracula
+from ggsegpy.registry import clear_cache, fetch_atlas, list_atlases
 from ggsegpy.data import (
     AtlasData,
     BrainMeshes,
@@ -111,11 +112,13 @@ __all__ = [
     "AtlasData",
     "brain_join",
     "BrainAtlas",
+    "clear_cache",
     "BrainFigure",
     "BrainMeshes",
     "CorticalAtlas",
     "CorticalData",
     "dk",
+    "fetch_atlas",
     "generate_palette",
     "geom_brain",
     "ggseg3d",
@@ -123,6 +126,7 @@ __all__ = [
     "is_ggseg_atlas",
     "is_subcortical_atlas",
     "is_tract_atlas",
+    "list_atlases",
     "pan_camera",
     "position_brain",
     "remove_legend",
