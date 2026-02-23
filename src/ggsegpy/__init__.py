@@ -35,7 +35,6 @@ from ggsegpy.atlas_utils import (
     atlas_views,
 )
 from ggsegpy.atlases import aseg, dk, tracula
-from ggsegpy.registry import clear_cache, fetch_atlas, list_atlases
 from ggsegpy.data import (
     AtlasData,
     BrainMeshes,
@@ -69,6 +68,7 @@ from ggsegpy.plot3d import (
     set_surface_color,
 )
 from ggsegpy.position_brain import position_brain, reposition_brain
+from ggsegpy.registry import clear_cache, fetch_atlas, list_atlases
 from ggsegpy.themes import (
     theme_brain,
     theme_brain_void,
