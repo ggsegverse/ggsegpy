@@ -12,7 +12,9 @@ import pandas as pd
 if TYPE_CHECKING:
     from ggsegpy.atlas import BrainAtlas
 
-REGISTRY_URL = "https://api.github.com/repos/ggsegverse/ggsegpy-data/contents/registry.json"
+REGISTRY_URL = (
+    "https://api.github.com/repos/ggsegverse/ggsegpy-data/contents/registry.json"
+)
 CACHE_DIR = Path.home() / ".cache" / "ggsegpy"
 
 
@@ -58,8 +60,10 @@ def fetch_atlas(name: str, force: bool = False) -> BrainAtlas:
 
     for file_info in info.get("files", []):
         file_path = atlas_dir / file_info["name"]
-        if force or not file_path.exists() or not _verify_sha256(
-            file_path, file_info.get("sha256")
+        if (
+            force
+            or not file_path.exists()
+            or not _verify_sha256(file_path, file_info.get("sha256"))
         ):
             _download_file(file_info["url"], file_path, file_info.get("sha256"))
 
@@ -114,9 +118,7 @@ def _verify_sha256(path: Path, expected: str | None) -> bool:
     return sha256.hexdigest() == expected
 
 
-def _load_atlas_from_cache(
-    name: str, atlas_dir: Path, info: dict
-) -> BrainAtlas:
+def _load_atlas_from_cache(name: str, atlas_dir: Path, info: dict) -> BrainAtlas:
     from ggsegpy.atlas import CorticalAtlas, SubcorticalAtlas
     from ggsegpy.data import CorticalData, SubcorticalData
 
@@ -139,9 +141,7 @@ def _load_atlas_from_cache(
 
         core = pd.read_parquet(files[core_file])
         palette = (
-            dict(zip(core["label"], core["color"]))
-            if "color" in core.columns
-            else {}
+            dict(zip(core["label"], core["color"])) if "color" in core.columns else {}
         )
 
         ggseg = None
