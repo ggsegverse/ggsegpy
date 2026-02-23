@@ -26,7 +26,7 @@ from ggsegpy import geom_brain, dk
 ggplot() + geom_brain(atlas=dk())
 ```
 
-<img src="README_files/figure-commonmark/cell-2-output-1.png"
+<img src="https://raw.githubusercontent.com/ggsegverse/ggsegpy/main/README_files/figure-commonmark/cell-2-output-1.png"
 width="525" height="375" />
 
 **With custom data:**
@@ -42,7 +42,7 @@ data = pd.DataFrame({
 ggplot(data) + geom_brain(atlas=dk(), mapping=aes(fill="value"))
 ```
 
-<img src="README_files/figure-commonmark/cell-3-output-1.png"
+<img src="https://raw.githubusercontent.com/ggsegverse/ggsegpy/main/README_files/figure-commonmark/cell-3-output-1.png"
 width="525" height="375" />
 
 ### Subcortical atlas
@@ -53,7 +53,7 @@ from ggsegpy import aseg
 ggplot() + geom_brain(atlas=aseg())
 ```
 
-<img src="README_files/figure-commonmark/cell-4-output-1.png"
+<img src="https://raw.githubusercontent.com/ggsegverse/ggsegpy/main/README_files/figure-commonmark/cell-4-output-1.png"
 width="525" height="375" />
 
 ## 3D Visualization
@@ -89,7 +89,7 @@ frontal = atlas_view_keep(frontal, "lateral")
 ggplot() + geom_brain(atlas=frontal)
 ```
 
-<img src="README_files/figure-commonmark/cell-7-output-1.png"
+<img src="https://raw.githubusercontent.com/ggsegverse/ggsegpy/main/README_files/figure-commonmark/cell-7-output-1.png"
 width="525" height="375" />
 
 ``` python

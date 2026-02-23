@@ -34,10 +34,14 @@ jobs:
       - name: Render README
         run: quarto render README.qmd
 
+      - name: Fix image URLs for PyPI
+        run: |
+          sed -i 's|src="README_files/|src="https://raw.githubusercontent.com/ggsegverse/ggsegpy/main/README_files/|g' README.md
+
       - name: Commit changes
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add README.md man/figures/
+          git add README.md README_files/
           git diff --staged --quiet || git commit -m "Render README.md [skip ci]"
           git push
