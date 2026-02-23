@@ -41,9 +41,6 @@ def fetch_atlas(name: str, force: bool = False) -> BrainAtlas:
     Returns:
         BrainAtlas object with core, 2D, and 3D data
     """
-    from ggsegpy.atlas import CorticalAtlas
-    from ggsegpy.data import CorticalData
-
     registry = _fetch_registry()
 
     if name not in registry:
@@ -133,16 +130,12 @@ def _load_atlas_from_cache(
             atlas_type = meta.get("type", "cortical")
 
     core_files = [f for f in files if "_core.parquet" in f]
-    sf_files = [f for f in files if "_2d.parquet" in f]
-    v3d_files = [f for f in files if "_3d.parquet" in f]
-    mesh_files = [f for f in files if "_mesh.parquet" in f]
 
     atlases = {}
     for core_file in core_files:
         atlas_name = core_file.replace("_core.parquet", "")
         sf_file = f"{atlas_name}_2d.parquet"
         v3d_file = f"{atlas_name}_3d.parquet"
-        mesh_file = f"{atlas_name}_mesh.parquet"
 
         core = pd.read_parquet(files[core_file])
         palette = (
